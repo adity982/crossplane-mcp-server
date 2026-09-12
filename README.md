@@ -4,6 +4,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/ravibagri5/crossplane-mcp-server.svg)](https://pkg.go.dev/github.com/ravibagri5/crossplane-mcp-server)
 [![Go version](https://img.shields.io/github/go-mod/go-version/ravibagri5/crossplane-mcp-server)](go.mod)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![smithery badge](https://smithery.ai/badge/ravibagri5/crossplane-mcp-server)](https://smithery.ai/servers/ravibagri5/crossplane-mcp-server)
 
 A [Model Context Protocol](https://modelcontextprotocol.io) server that lets AI
 assistants understand a [Crossplane](https://crossplane.io) control plane.

@@ -3,6 +3,7 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -14,6 +15,8 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+
+	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/ravibagri5/crossplane-mcp-server/pkg/api"
 	"github.com/ravibagri5/crossplane-mcp-server/pkg/crossplane"
@@ -190,7 +193,9 @@ func newLogger(level string) *slog.Logger {
 }
 
 func newToolsCommand() *cobra.Command {
-	return &cobra.Command{
+	var asJSON bool
+
+	cmd := &cobra.Command{
 		Use:   "tools",
 		Short: "List the tools this server exposes, grouped by toolset",
 		Long: "Print every tool this build exposes without connecting to a cluster. " +
@@ -199,6 +204,10 @@ func newToolsCommand() *cobra.Command {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			if asJSON {
+				return writeToolsJSON(cmd.OutOrStdout())
+			}
+
 			var out strings.Builder
 			for _, toolset := range toolsets.All() {
 				fmt.Fprintf(&out, "%s: %s\n", toolset.Name(), toolset.Description())
@@ -213,6 +222,26 @@ func newToolsCommand() *cobra.Command {
 			return err
 		},
 	}
+
+	cmd.Flags().BoolVar(&asJSON, "json", false,
+		"Print the full MCP tool declarations, including input schemas and annotations.")
+
+	return cmd
+}
+
+// writeToolsJSON prints the tool declarations exactly as a client would see
+// them in a tools/list reply, which is what bundle manifests need to embed.
+func writeToolsJSON(w io.Writer) error {
+	declarations := []*sdk.Tool{}
+	for _, toolset := range toolsets.All() {
+		for _, tool := range toolset.Tools() {
+			declarations = append(declarations, mcp.Declaration(tool))
+		}
+	}
+
+	encoder := json.NewEncoder(w)
+	encoder.SetIndent("", "  ")
+	return encoder.Encode(declarations)
 }
 
 // summarise reduces a tool description to its first sentence, which is all

@@ -1,0 +1,57 @@
+{
+  "manifest_version": "0.3",
+  "name": "crossplane-mcp-server",
+  "display_name": "Crossplane MCP Server",
+  "version": "0.1.3",
+  "description": "Read-only access to a Crossplane control plane: inspect managed resources, composite resources, claims, packages, compositions, XRDs and their health.",
+  "long_description": "Crossplane MCP Server gives an AI agent safe, read-only visibility into a Crossplane control plane.\n\nIt connects through your existing kubeconfig and exposes five toolsets:\n\n- **diagnostics** - overall control plane status, everything that is currently failing, stuck deletions, deletion protection and the installed Crossplane API surface.\n- **packages** - installed providers, composition functions and configurations with their Installed/Healthy conditions and revisions.\n- **compositions** - CompositeResourceDefinitions (XRDs), Compositions, their schemas, static validation and offline dry-run rendering of a function pipeline.\n- **resources** - managed resources, composite resources (XRs) and claims with Ready/Synced conditions, composition trees and Kubernetes events.\n- **config** - EnvironmentConfigs, DeploymentRuntimeConfigs, ManagedResourceDefinitions and activation policies.\n\nEvery tool is read-only: the server never creates, patches or deletes anything on the control plane.",
+  "author": {
+    "name": "ravibagri5",
+    "url": "https://github.com/ravibagri5"
+  },
+  "homepage": "https://github.com/ravibagri5/crossplane-mcp-server",
+  "documentation": "https://github.com/ravibagri5/crossplane-mcp-server/blob/main/README.md",
+  "support": "https://github.com/ravibagri5/crossplane-mcp-server/issues",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ravibagri5/crossplane-mcp-server"
+  },
+  "server": {
+    "type": "binary",
+    "entry_point": "crossplane-mcp-server",
+    "mcp_config": {
+      "command": "${__dirname}/crossplane-mcp-server",
+      "args": [],
+      "env": {
+        "KUBECONFIG": "${user_config.kubeconfig}"
+      }
+    }
+  },
+  "tools_generated": false,
+  "tools": [],
+  "prompts_generated": false,
+  "keywords": [
+    "crossplane",
+    "kubernetes",
+    "k8s",
+    "control-plane",
+    "platform-engineering",
+    "gitops",
+    "infrastructure",
+    "devops"
+  ],
+  "license": "Apache-2.0",
+  "user_config": {
+    "kubeconfig": {
+      "type": "file",
+      "title": "Kubeconfig File",
+      "description": "Path to the kubeconfig file used to reach your Crossplane control plane. Defaults to ~/.kube/config.",
+      "default": "${HOME}/.kube/config",
+      "required": false
+    }
+  },
+  "compatibility": {
+    "platforms": ["darwin", "linux", "win32"]
+  }
+}

@@ -86,15 +86,22 @@ func NewServer(config Config) (*Server, error) {
 // Tools returns the registered tools, in registration order.
 func (s *Server) Tools() []api.Tool { return s.tools }
 
-// register wires a single tool onto the SDK server.
-func (s *Server) register(tool api.Tool) {
-	declaration := &sdk.Tool{
+// Declaration renders the MCP declaration for a tool, including the cluster
+// selector every tool shares. Callers that need the wire-level tool shape
+// without running a server, such as bundle packaging, use this.
+func Declaration(tool api.Tool) *sdk.Tool {
+	return &sdk.Tool{
 		Name:        tool.Name,
 		Title:       tool.Title,
 		Description: tool.Description,
 		InputSchema: withClusterArgument(tool.InputSchema),
 		Annotations: tool.Annotations(),
 	}
+}
+
+// register wires a single tool onto the SDK server.
+func (s *Server) register(tool api.Tool) {
+	declaration := Declaration(tool)
 
 	s.sdk.AddTool(declaration, func(ctx context.Context, request *sdk.CallToolRequest) (*sdk.CallToolResult, error) {
 		return s.call(ctx, tool, request)

@@ -61,6 +61,11 @@ image: ## Build the container image
 		--build-arg BUILD_DATE=$(BUILD_DATE) \
 		-t ghcr.io/ravibagri5/$(BINARY):$(VERSION) .
 
+.PHONY: mcpb
+mcpb: ## Build one MCPB bundle per platform into ./dist
+	VERSION=$(VERSION) COMMIT=$(COMMIT) BUILD_DATE=$(BUILD_DATE) DIST_DIR=$(DIST_DIR) \
+		sh scripts/mcpb.sh
+
 ##@ Test
 
 .PHONY: test
