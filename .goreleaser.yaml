@@ -5,6 +5,8 @@ project_name: crossplane-mcp-server
 before:
   hooks:
     - go mod tidy
+    # Bundles are built outside dist/ because --clean wipes it after hooks run.
+    - sh -c "DIST_DIR=bundles sh scripts/mcpb.sh"
 
 builds:
   - id: crossplane-mcp-server
@@ -44,6 +46,8 @@ archives:
 
 checksum:
   name_template: checksums.txt
+  extra_files:
+    - glob: ./bundles/*.mcpb
 
 sboms:
   - artifacts: archive
@@ -122,5 +126,7 @@ changelog:
 release:
   draft: true
   prerelease: auto
+  extra_files:
+    - glob: ./bundles/*.mcpb
   footer: |
     **Full changelog**: https://github.com/ravibagri5/crossplane-mcp-server/compare/{{ .PreviousTag }}...{{ .Tag }}

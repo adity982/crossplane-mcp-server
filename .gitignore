@@ -2,6 +2,7 @@
 /bin/
 /dist/
 /out/
+/bundles/
 
 # `go build ./cmd/crossplane-mcp-server` drops the binary in the working
 # directory rather than in bin/, so ignore it by name at the repo root.
