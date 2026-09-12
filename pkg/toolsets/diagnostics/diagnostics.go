@@ -93,7 +93,7 @@ func status(p api.Params) (*api.Result, error) {
 		healthy := 0
 		var unhealthy []string
 		for _, pkg := range installed {
-			if pkg.Installed == "True" && pkg.Healthy == "True" {
+			if pkg.Installed == crossplane.StatusTrue && pkg.Healthy == crossplane.StatusTrue {
 				healthy++
 				continue
 			}
@@ -116,7 +116,7 @@ func status(p api.Params) (*api.Result, error) {
 	if xrds, err := p.Client.XRDs(p); err == nil {
 		established := 0
 		for _, xrd := range xrds {
-			if xrd.Ready == "True" {
+			if xrd.Ready == crossplane.StatusTrue {
 				established++
 			}
 		}
@@ -189,7 +189,7 @@ func unhealthyResources(p api.Params) (*api.Result, error) {
 				continue
 			}
 			for _, pkg := range installed {
-				if pkg.Installed == "True" && pkg.Healthy == "True" {
+				if pkg.Installed == crossplane.StatusTrue && pkg.Healthy == crossplane.StatusTrue {
 					continue
 				}
 				rows = append(rows, []string{
@@ -343,10 +343,10 @@ func isCrossplaneGroup(group string) bool {
 
 func countConditions(summaries []crossplane.Summary) (ready, synced int) {
 	for _, s := range summaries {
-		if s.Ready == "True" {
+		if s.Ready == crossplane.StatusTrue {
 			ready++
 		}
-		if s.Synced == "True" {
+		if s.Synced == crossplane.StatusTrue {
 			synced++
 		}
 	}

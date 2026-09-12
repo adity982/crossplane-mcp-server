@@ -18,6 +18,15 @@ const (
 	TypeInstalled = "Installed"
 )
 
+// StatusTrue is the condition status meaning the condition is satisfied.
+// Conditions are compared as strings because they come from unstructured
+// objects rather than typed ones.
+const StatusTrue = string(metav1.ConditionTrue)
+
+// StatusAbsent is what the summary columns show when an object does not report
+// a condition at all, which is different from reporting it as False.
+const StatusAbsent = "-"
+
 // Condition is a trimmed down status condition. We deliberately do not reuse
 // metav1.Condition because Crossplane omits observedGeneration on most of its
 // conditions and we want the JSON we hand to the model to stay small.
@@ -30,7 +39,7 @@ type Condition struct {
 }
 
 // IsTrue reports whether the condition is currently satisfied.
-func (c Condition) IsTrue() bool { return c.Status == string(metav1.ConditionTrue) }
+func (c Condition) IsTrue() bool { return c.Status == StatusTrue }
 
 // Conditions extracts status.conditions from any object. Objects without
 // conditions yield an empty slice rather than an error: a managed resource
@@ -68,14 +77,14 @@ func ConditionOfType(conditions []Condition, conditionType string) (Condition, b
 	return Condition{}, false
 }
 
-// conditionStatus renders a condition as a short column value. "-" means the
-// object does not report that condition at all, which is different from
-// "False" and worth showing.
+// conditionStatus renders a condition as a short column value. StatusAbsent
+// means the object does not report that condition at all, which is different
+// from "False" and worth showing.
 func conditionStatus(conditions []Condition, conditionType string) string {
 	if c, ok := ConditionOfType(conditions, conditionType); ok {
 		return c.Status
 	}
-	return "-"
+	return StatusAbsent
 }
 
 // Summary is the compact, uniform view of a Crossplane object that every list

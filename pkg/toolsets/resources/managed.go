@@ -155,15 +155,15 @@ func filterByStatus(summaries []crossplane.Summary, status string) []crossplane.
 	for _, s := range summaries {
 		switch status {
 		case statusReady:
-			if s.Ready == "True" {
+			if s.Ready == crossplane.StatusTrue {
 				kept = append(kept, s)
 			}
 		case statusNotReady:
-			if s.Ready != "True" {
+			if s.Ready != crossplane.StatusTrue {
 				kept = append(kept, s)
 			}
 		case statusNotSynced:
-			if s.Synced != "True" {
+			if s.Synced != crossplane.StatusTrue {
 				kept = append(kept, s)
 			}
 		}

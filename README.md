@@ -1,8 +1,8 @@
 # crossplane-mcp-server
 
-[![CI](https://github.com/crossplane-contrib/crossplane-mcp-server/actions/workflows/ci.yaml/badge.svg)](https://github.com/crossplane-contrib/crossplane-mcp-server/actions/workflows/ci.yaml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/crossplane-contrib/crossplane-mcp-server)](https://goreportcard.com/report/github.com/crossplane-contrib/crossplane-mcp-server)
-[![Go Reference](https://pkg.go.dev/badge/github.com/crossplane-contrib/crossplane-mcp-server.svg)](https://pkg.go.dev/github.com/crossplane-contrib/crossplane-mcp-server)
+[![CI](https://github.com/ravibagri5/crossplane-mcp-server/actions/workflows/ci.yaml/badge.svg)](https://github.com/ravibagri5/crossplane-mcp-server/actions/workflows/ci.yaml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ravibagri5/crossplane-mcp-server)](https://goreportcard.com/report/github.com/ravibagri5/crossplane-mcp-server)
+[![Go Reference](https://pkg.go.dev/badge/github.com/ravibagri5/crossplane-mcp-server.svg)](https://pkg.go.dev/github.com/ravibagri5/crossplane-mcp-server)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
 A [Model Context Protocol](https://modelcontextprotocol.io) server that lets AI

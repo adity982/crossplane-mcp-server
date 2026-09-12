@@ -144,8 +144,8 @@ func (c *Client) XRDs(ctx context.Context) ([]CompositeResourceDefinition, error
 			Scope:         nestedString(obj, "spec", "scope"),
 		}
 		// Crossplane reports Established/Offered rather than Ready on XRDs, so
-		// surface whichever it publishes instead of a bare "-".
-		if xrd.Ready == "-" {
+		// surface whichever it publishes instead of a bare placeholder.
+		if xrd.Ready == StatusAbsent {
 			xrd.Ready = conditionStatus(xrd.Conditions, "Established")
 		}
 		for _, version := range nestedSlice(obj, "spec", "versions") {

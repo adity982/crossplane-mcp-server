@@ -76,7 +76,7 @@ func listPackages(kind crossplane.PackageKind) api.Handler {
 
 		kept := make([]crossplane.Package, 0, len(installed))
 		for _, pkg := range installed {
-			if unhealthyOnly && pkg.Installed == "True" && pkg.Healthy == "True" {
+			if unhealthyOnly && pkg.Installed == crossplane.StatusTrue && pkg.Healthy == crossplane.StatusTrue {
 				continue
 			}
 			kept = append(kept, pkg)
@@ -94,7 +94,7 @@ func listPackages(kind crossplane.PackageKind) api.Handler {
 		rows := make([][]string, 0, len(kept))
 		healthy := 0
 		for _, pkg := range kept {
-			if pkg.Installed == "True" && pkg.Healthy == "True" {
+			if pkg.Installed == crossplane.StatusTrue && pkg.Healthy == crossplane.StatusTrue {
 				healthy++
 			}
 			rows = append(rows, []string{

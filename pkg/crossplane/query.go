@@ -170,12 +170,12 @@ func CountByKind(summaries []Summary) []KindCount {
 			index[key] = count
 		}
 		count.Total++
-		if s.Ready == "True" {
+		if s.Ready == StatusTrue {
 			count.Ready++
 		} else {
 			count.NotReady++
 		}
-		if s.Synced == "True" {
+		if s.Synced == StatusTrue {
 			count.Synced++
 		} else {
 			count.NotSynced++

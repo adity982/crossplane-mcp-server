@@ -75,9 +75,13 @@ jobs:
 
       - name: Vet
         run: go vet ./...
+        shell: bash
 
       - name: Test
+        # PowerShell mangles the -coverprofile=coverage.out argument, so pin
+        # every runner to bash for consistency.
         run: go test -race -count=1 -coverprofile=coverage.out -covermode=atomic ./...
+        shell: bash
 
       - name: Upload coverage
         if: matrix.os == 'ubuntu-latest'
@@ -119,6 +123,10 @@ jobs:
           cache: true
 
       - name: govulncheck
+        # govulncheck tracks the Go tip release, so let the module toolchain
+        # directive fetch a newer Go than setup-go pinned.
+        env:
+          GOTOOLCHAIN: auto
         run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
   image:

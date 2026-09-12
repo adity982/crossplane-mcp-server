@@ -219,7 +219,7 @@ func renderEvents(events []crossplane.Event) string {
 
 // collectUnready flattens a tree into the list of resources that are not Ready.
 func collectUnready(node crossplane.TreeNode, acc []string) []string {
-	if node.Ready != "True" {
+	if node.Ready != crossplane.StatusTrue {
 		entry := fmt.Sprintf("%s/%s (ready=%s, synced=%s)", node.Kind, node.Name, node.Ready, node.Synced)
 		switch {
 		case node.Error != "":
