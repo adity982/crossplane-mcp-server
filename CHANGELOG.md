@@ -10,9 +10,12 @@ a tool, or making an optional argument required, is a breaking change.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-09-12
+
+First release. Everything below is new.
+
 ### Added
 
-- Initial release.
 - `resources` toolset: `crossplane_managed_resources_summary`,
   `crossplane_managed_resources_list`, `crossplane_composite_resources_list`,
   `crossplane_claims_list`, `crossplane_resource_get`,
@@ -28,15 +31,10 @@ a tool, or making an optional argument required, is a breaking change.
 - `--toolsets` for exposing a subset of the tools.
 - `tools` subcommand for listing the tool surface without a cluster.
 
-### Changed
+### Notes
 
-- Building from source now requires Go 1.26 or newer, which `k8s.io/client-go`
+- Requires Go 1.26 or newer to build from source, which `k8s.io/client-go`
   v0.37 depends on. The released binaries and container image are unaffected.
 
-### Security
-
-- Updated `golang.org/x/net` and `golang.org/x/text`, which reach the network
-  through `client-go` and were affected by GO-2026-4918, GO-2026-5026 and
-  GO-2026-5970.
-
-[Unreleased]: https://github.com/ravibagri5/crossplane-mcp-server/commits/main
+[Unreleased]: https://github.com/ravibagri5/crossplane-mcp-server/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/ravibagri5/crossplane-mcp-server/releases/tag/v0.1.0
