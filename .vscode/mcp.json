@@ -1,0 +1,12 @@
+{
+  "servers": {
+    "crossplane": {
+      "type": "stdio",
+      "command": "${workspaceFolder}/bin/crossplane-mcp-server",
+      "args": [
+        "--log-level",
+        "debug"
+      ]
+    }
+  }
+}

@@ -8,7 +8,9 @@ package mcp
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"time"
@@ -144,10 +146,14 @@ func (s *Server) call(ctx context.Context, tool api.Tool, request *sdk.CallToolR
 // desktop MCP clients launch it.
 func (s *Server) ServeStdio(ctx context.Context) error {
 	s.config.Logger.Info("serving MCP over stdio")
-	if err := s.sdk.Run(ctx, &sdk.StdioTransport{}); err != nil {
-		return fmt.Errorf("stdio transport failed: %w", err)
+	err := s.sdk.Run(ctx, &sdk.StdioTransport{})
+	// A client closing its end of the pipe, or the context being cancelled by
+	// a signal, is how a stdio session ends. Neither is a failure.
+	if err == nil || errors.Is(err, io.EOF) || errors.Is(err, context.Canceled) {
+		s.config.Logger.Info("stdio session closed")
+		return nil
 	}
-	return nil
+	return fmt.Errorf("stdio transport failed: %w", err)
 }
 
 // HTTPHandler returns a handler serving the streamable HTTP transport, for
