@@ -28,4 +28,15 @@ a tool, or making an optional argument required, is a breaking change.
 - `--toolsets` for exposing a subset of the tools.
 - `tools` subcommand for listing the tool surface without a cluster.
 
+### Changed
+
+- Building from source now requires Go 1.26 or newer, which `k8s.io/client-go`
+  v0.37 depends on. The released binaries and container image are unaffected.
+
+### Security
+
+- Updated `golang.org/x/net` and `golang.org/x/text`, which reach the network
+  through `client-go` and were affected by GO-2026-4918, GO-2026-5026 and
+  GO-2026-5970.
+
 [Unreleased]: https://github.com/ravibagri5/crossplane-mcp-server/commits/main

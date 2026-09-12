@@ -81,6 +81,13 @@ and ask it about your control plane.
 
 ## Installation
 
+### Requirements
+
+- **Go 1.26 or newer**, if you install from source or with `go install`. The
+  pre-built binaries and the container image have no such requirement.
+- Access to a Kubernetes cluster with Crossplane installed. Any version of
+  Crossplane v1 or v2 works.
+
 ### Go install
 
 ```shell
@@ -99,6 +106,7 @@ docker run --rm -i \
 
 Pre-built binaries for Linux, macOS and Windows are attached to every
 [release](https://github.com/ravibagri5/crossplane-mcp-server/releases).
+These are the easiest option if you do not have a recent Go toolchain.
 
 ### From source
 

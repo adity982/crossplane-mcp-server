@@ -39,7 +39,7 @@ work.
 
 ## Development setup
 
-You need Go 1.25 or newer and access to a Kubernetes cluster with Crossplane
+You need Go 1.26 or newer and access to a Kubernetes cluster with Crossplane
 installed. A local control plane is enough:
 
 ```shell
