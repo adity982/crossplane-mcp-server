@@ -10,6 +10,9 @@ LABEL org.opencontainers.image.title="crossplane-mcp-server" \
       org.opencontainers.image.source="https://github.com/ravibagri5/crossplane-mcp-server" \
       org.opencontainers.image.licenses="Apache-2.0"
 
+# Proves to the MCP Registry that this image belongs to the server of that name.
+LABEL io.modelcontextprotocol.server.name="io.github.ravibagri5/crossplane-mcp-server"
+
 COPY crossplane-mcp-server /usr/local/bin/crossplane-mcp-server
 
 # Numeric, because a Kubernetes runAsNonRoot check cannot verify a user name.
