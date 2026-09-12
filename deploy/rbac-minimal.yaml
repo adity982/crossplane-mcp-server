@@ -1,0 +1,51 @@
+# A narrower ClusterRole for people who do not want to grant a cluster-wide
+# read. It covers Crossplane's own API groups plus the groups of the providers
+# you actually run, which you have to list yourself.
+#
+# The cost of this approach: crossplane_managed_resources_* will report a
+# warning for every provider group you forget to add, and crossplane_resource_*
+# will fail on those kinds. The tools degrade rather than break.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: crossplane-mcp-server-minimal
+rules:
+  # Discovery. Without this the server cannot find managed resource kinds.
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["get", "list"]
+
+  # Crossplane's own API groups.
+  - apiGroups:
+      - pkg.crossplane.io
+      - apiextensions.crossplane.io
+      - protection.crossplane.io
+      - ops.crossplane.io
+      - secrets.crossplane.io
+    resources: ["*"]
+    verbs: ["get", "list"]
+
+  # Events, which carry the real reason a resource is failing.
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list"]
+
+  # The Crossplane core deployment, used to report the installed version.
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list"]
+
+  # Your platform APIs. Replace with the groups from your XRDs.
+  - apiGroups:
+      - platform.example.org
+    resources: ["*"]
+    verbs: ["get", "list"]
+
+  # Your providers' API groups. Add one entry per provider you run.
+  - apiGroups:
+      - s3.aws.upbound.io
+      - ec2.aws.upbound.io
+      - rds.aws.upbound.io
+      - aws.upbound.io
+    resources: ["*"]
+    verbs: ["get", "list"]

@@ -1,0 +1,127 @@
+version: 2
+
+project_name: crossplane-mcp-server
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: crossplane-mcp-server
+    main: ./cmd/crossplane-mcp-server
+    binary: crossplane-mcp-server
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X github.com/crossplane-contrib/crossplane-mcp-server/pkg/version.Version={{ .Version }}
+      - -X github.com/crossplane-contrib/crossplane-mcp-server/pkg/version.Commit={{ .ShortCommit }}
+      - -X github.com/crossplane-contrib/crossplane-mcp-server/pkg/version.BuildDate={{ .Date }}
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+
+archives:
+  - formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    files:
+      - README.md
+      - LICENSE
+      - CHANGELOG.md
+
+checksum:
+  name_template: checksums.txt
+
+sboms:
+  - artifacts: archive
+
+signs:
+  - cmd: cosign
+    certificate: "${artifact}.pem"
+    args:
+      - sign-blob
+      - "--output-certificate=${certificate}"
+      - "--output-signature=${signature}"
+      - "${artifact}"
+      - "--yes"
+    artifacts: checksum
+    output: true
+
+dockers:
+  - image_templates:
+      - ghcr.io/crossplane-contrib/crossplane-mcp-server:{{ .Version }}-amd64
+      - ghcr.io/crossplane-contrib/crossplane-mcp-server:latest-amd64
+    use: buildx
+    goarch: amd64
+    build_flag_templates:
+      - --platform=linux/amd64
+      - --build-arg=VERSION={{ .Version }}
+      - --build-arg=COMMIT={{ .ShortCommit }}
+      - --build-arg=BUILD_DATE={{ .Date }}
+  - image_templates:
+      - ghcr.io/crossplane-contrib/crossplane-mcp-server:{{ .Version }}-arm64
+      - ghcr.io/crossplane-contrib/crossplane-mcp-server:latest-arm64
+    use: buildx
+    goarch: arm64
+    build_flag_templates:
+      - --platform=linux/arm64
+      - --build-arg=VERSION={{ .Version }}
+      - --build-arg=COMMIT={{ .ShortCommit }}
+      - --build-arg=BUILD_DATE={{ .Date }}
+
+docker_manifests:
+  - name_template: ghcr.io/crossplane-contrib/crossplane-mcp-server:{{ .Version }}
+    image_templates:
+      - ghcr.io/crossplane-contrib/crossplane-mcp-server:{{ .Version }}-amd64
+      - ghcr.io/crossplane-contrib/crossplane-mcp-server:{{ .Version }}-arm64
+  - name_template: ghcr.io/crossplane-contrib/crossplane-mcp-server:latest
+    image_templates:
+      - ghcr.io/crossplane-contrib/crossplane-mcp-server:latest-amd64
+      - ghcr.io/crossplane-contrib/crossplane-mcp-server:latest-arm64
+
+brews:
+  - repository:
+      owner: crossplane-contrib
+      name: homebrew-tap
+    homepage: https://github.com/crossplane-contrib/crossplane-mcp-server
+    description: Model Context Protocol server for Crossplane control planes
+    license: Apache-2.0
+    test: |
+      system "#{bin}/crossplane-mcp-server", "--version"
+
+changelog:
+  use: github
+  sort: asc
+  groups:
+    - title: Added
+      regexp: '^.*?(feat|add)(\([[:word:]]+\))??!?:.+$'
+      order: 0
+    - title: Fixed
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 1
+    - title: Other
+      order: 999
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+
+release:
+  draft: true
+  prerelease: auto
+  footer: |
+    **Full changelog**: https://github.com/crossplane-contrib/crossplane-mcp-server/compare/{{ .PreviousTag }}...{{ .Tag }}

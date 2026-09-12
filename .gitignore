@@ -1,0 +1,20 @@
+# Build output
+/bin/
+/dist/
+*.exe
+
+# Test and coverage output
+coverage.out
+coverage.html
+*.test
+
+# Editors
+.idea/
+*.swp
+.DS_Store
+
+# Local configuration that should never be committed
+kubeconfig
+*.kubeconfig
+.env
+.env.*

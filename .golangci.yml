@@ -1,0 +1,66 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - copyloopvar
+    - errorlint
+    - gocritic
+    - goconst
+    - misspell
+    - nolintlint
+    - prealloc
+    - revive
+    - unconvert
+    - unparam
+    - whitespace
+
+  settings:
+    revive:
+      rules:
+        # Exported identifiers carry the documentation for anyone embedding
+        # this module, so keep the comments honest.
+        - name: exported
+          arguments:
+            - checkPrivateReceivers
+        - name: package-comments
+        - name: indent-error-flow
+        - name: errorf
+        - name: error-strings
+        - name: context-as-argument
+        - name: unexported-return
+
+    goconst:
+      min-len: 3
+      min-occurrences: 4
+      ignore-tests: true
+
+    gocritic:
+      disabled-checks:
+        - ifElseChain
+
+  exclusions:
+    rules:
+      # Tests are allowed to be repetitive and to skip the doc comments.
+      - path: _test\.go
+        linters:
+          - goconst
+          - revive
+          - unparam
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/crossplane-contrib/crossplane-mcp-server
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

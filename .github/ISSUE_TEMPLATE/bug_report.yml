@@ -1,0 +1,84 @@
+name: Bug report
+description: Something does not work the way it should
+labels: ["bug", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this.
+
+        If this is a security issue, please do not file it here. See
+        [SECURITY.md](https://github.com/crossplane-contrib/crossplane-mcp-server/blob/main/SECURITY.md).
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you see, and what did you expect to see instead?
+      placeholder: |
+        I asked the assistant how many managed resources I have. It reported 12,
+        but `kubectl get managed` shows 340.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How can we reproduce it?
+      description: >
+        The tool call that went wrong, with its arguments, is the most useful
+        thing you can give us. Most MCP clients can show you the raw call.
+      placeholder: |
+        1. Install Crossplane 1.20 with provider-aws-s3
+        2. Call crossplane_managed_resources_summary with no arguments
+        3. The result shows only the Bucket kind
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Tool output
+      description: >
+        Paste the tool result, and the server's stderr log if you have it.
+        Running with `--log-level debug` gives more detail. Please redact
+        anything sensitive.
+      render: shell
+
+  - type: input
+    id: server-version
+    attributes:
+      label: crossplane-mcp-server version
+      description: Output of `crossplane-mcp-server --version`
+      placeholder: crossplane-mcp-server v0.1.0 (commit abc1234, ...)
+    validations:
+      required: true
+
+  - type: input
+    id: crossplane-version
+    attributes:
+      label: Crossplane version
+      description: Output of `kubectl get deployment crossplane -n crossplane-system -o jsonpath='{.spec.template.spec.containers[0].image}'`
+      placeholder: xpkg.crossplane.io/crossplane/crossplane:v2.0.1
+    validations:
+      required: true
+
+  - type: input
+    id: kubernetes-version
+    attributes:
+      label: Kubernetes version
+      placeholder: v1.31.4
+
+  - type: input
+    id: client
+    attributes:
+      label: MCP client
+      placeholder: Claude Desktop 1.8.0, VS Code 1.98, MCP Inspector, ...
+
+  - type: textarea
+    id: anything-else
+    attributes:
+      label: Anything else?
+      description: >
+        Anything unusual about your control plane is worth mentioning. Custom
+        XRDs, an unusual provider, a mid-upgrade cluster, and so on.

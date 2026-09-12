@@ -1,0 +1,56 @@
+name: Feature request
+description: Suggest a tool or a capability
+labels: ["enhancement", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The best feature requests describe a question you could not get
+        answered about your control plane, rather than a specific
+        implementation. Tell us the problem and we will work out the tool
+        together.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: What did you want to ask your assistant, and what happened instead?
+      placeholder: |
+        I wanted to ask which ProviderConfig my failing Buckets are using, so I
+        could tell whether the credentials had expired. The assistant had no way
+        to see that, so it guessed.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like to see?
+      description: If you have an idea for the tool or the arguments, describe it here.
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What have you tried instead?
+      description: >
+        Existing tools that nearly worked, or the kubectl commands you fall back
+        to today. This helps us judge whether to extend a tool or add one.
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: >
+            This does not require the server to create, update or delete anything.
+            (Write support needs a design proposal first, see GOVERNANCE.md.)
+        - label: >
+            This does not require hard-coded knowledge of a specific Crossplane
+            provider.
+
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Would you like to work on this?
+      options:
+        - label: I am willing to open a pull request for this

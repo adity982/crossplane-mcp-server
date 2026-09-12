@@ -1,0 +1,112 @@
+# Deploys crossplane-mcp-server into the control plane it inspects, serving the
+# MCP streamable HTTP transport.
+#
+# The HTTP transport has no authentication of its own. Keep the Service
+# internal and put an authenticating proxy in front of it before exposing it to
+# anyone. See SECURITY.md.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: crossplane-mcp-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: crossplane-mcp-server
+  namespace: crossplane-mcp-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: crossplane-mcp-server
+rules:
+  # Managed resources live in provider-specific API groups that do not exist
+  # until a provider is installed, so they cannot be enumerated up front. The
+  # verbs are read-only, which is the guarantee that matters.
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: crossplane-mcp-server
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: crossplane-mcp-server
+subjects:
+  - kind: ServiceAccount
+    name: crossplane-mcp-server
+    namespace: crossplane-mcp-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crossplane-mcp-server
+  namespace: crossplane-mcp-system
+  labels:
+    app.kubernetes.io/name: crossplane-mcp-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: crossplane-mcp-server
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: crossplane-mcp-server
+    spec:
+      serviceAccountName: crossplane-mcp-server
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: crossplane-mcp-server
+          image: ghcr.io/crossplane-contrib/crossplane-mcp-server:latest
+          args:
+            - --http-address=:8080
+            - --log-level=info
+          ports:
+            - name: http
+              containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: crossplane-mcp-server
+  namespace: crossplane-mcp-system
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: crossplane-mcp-server
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
