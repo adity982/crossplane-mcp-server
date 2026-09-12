@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/jsonschema-go/jsonschema"
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/ravibagri5/crossplane-mcp-server/pkg/api"
@@ -24,8 +25,8 @@ import (
 
 // Config configures the MCP server.
 type Config struct {
-	// Client talks to the Crossplane control plane.
-	Client *crossplane.Client
+	// Provider hands out a client per cluster.
+	Provider *crossplane.Provider
 	// Toolsets are the tool groups to expose.
 	Toolsets []api.Toolset
 	// Logger receives operational logs. Never write logs to stdout when the
@@ -45,8 +46,8 @@ type Server struct {
 
 // NewServer builds an MCP server exposing the configured toolsets.
 func NewServer(config Config) (*Server, error) {
-	if config.Client == nil {
-		return nil, fmt.Errorf("a crossplane client is required")
+	if config.Provider == nil {
+		return nil, fmt.Errorf("a crossplane provider is required")
 	}
 	if config.Logger == nil {
 		config.Logger = slog.New(slog.DiscardHandler)
@@ -91,13 +92,28 @@ func (s *Server) register(tool api.Tool) {
 		Name:        tool.Name,
 		Title:       tool.Title,
 		Description: tool.Description,
-		InputSchema: tool.InputSchema,
+		InputSchema: withClusterArgument(tool.InputSchema),
 		Annotations: tool.Annotations(),
 	}
 
 	s.sdk.AddTool(declaration, func(ctx context.Context, request *sdk.CallToolRequest) (*sdk.CallToolResult, error) {
 		return s.call(ctx, tool, request)
 	})
+}
+
+// withClusterArgument adds the cluster selector to a tool's schema.
+//
+// Doing it here rather than in each tool keeps the argument identical across
+// every tool, and means a tool author cannot forget it.
+func withClusterArgument(schema *jsonschema.Schema) *jsonschema.Schema {
+	if schema == nil {
+		schema = &jsonschema.Schema{Type: "object"}
+	}
+	if schema.Properties == nil {
+		schema.Properties = map[string]*jsonschema.Schema{}
+	}
+	schema.Properties[api.ClusterArg] = api.ClusterProp
+	return schema
 }
 
 func (s *Server) call(ctx context.Context, tool api.Tool, request *sdk.CallToolRequest) (*sdk.CallToolResult, error) {
@@ -116,10 +132,21 @@ func (s *Server) call(ctx context.Context, tool api.Tool, request *sdk.CallToolR
 		defer cancel()
 	}
 
+	// The cluster selector is handled here so that no tool has to think about
+	// it, and is removed from the arguments the handler sees.
+	cluster, _ := arguments[api.ClusterArg].(string)
+	delete(arguments, api.ClusterArg)
+
+	client, err := s.config.Provider.Client(cluster)
+	if err != nil {
+		return errorResult(err), nil
+	}
+
 	result, err := tool.Handler(api.Params{
-		Context: ctx,
-		Client:  s.config.Client,
-		Args:    api.NewArgs(arguments),
+		Context:  ctx,
+		Client:   client,
+		Provider: s.config.Provider,
+		Args:     api.NewArgs(arguments),
 	})
 	duration := time.Since(started)
 
@@ -127,15 +154,18 @@ func (s *Server) call(ctx context.Context, tool api.Tool, request *sdk.CallToolR
 	// it as a protocol error so the failure is not silently attributed to the
 	// control plane.
 	if err != nil {
-		s.config.Logger.Error("tool failed", "tool", tool.Name, "duration", duration, "error", err)
+		s.config.Logger.Error("tool failed",
+			"tool", tool.Name, "cluster", client.Target(), "duration", duration, "error", err)
 		return nil, err
 	}
 	if result.Err != nil {
-		s.config.Logger.Warn("tool reported an error", "tool", tool.Name, "duration", duration, "error", result.Err)
+		s.config.Logger.Warn("tool reported an error",
+			"tool", tool.Name, "cluster", client.Target(), "duration", duration, "error", result.Err)
 		return errorResult(result.Err), nil
 	}
 
-	s.config.Logger.Debug("tool completed", "tool", tool.Name, "duration", duration)
+	s.config.Logger.Debug("tool completed",
+		"tool", tool.Name, "cluster", client.Target(), "duration", duration)
 	return &sdk.CallToolResult{
 		Content:           []sdk.Content{&sdk.TextContent{Text: result.Text}},
 		StructuredContent: result.Structured,

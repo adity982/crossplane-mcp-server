@@ -52,6 +52,8 @@ type Client struct {
 	// defaultNamespace is used by namespaced tools when the caller does not
 	// pass one explicitly.
 	defaultNamespace string
+	// target is the name of the cluster this client talks to.
+	target string
 
 	mu       sync.Mutex
 	apis     []APIResource
@@ -149,6 +151,11 @@ func NewForClients(dyn dynamic.Interface, disco discovery.DiscoveryInterface, co
 // DefaultNamespace returns the namespace namespaced tools fall back to.
 func (c *Client) DefaultNamespace() string {
 	return c.defaultNamespace
+}
+
+// Target returns the name of the cluster this client talks to.
+func (c *Client) Target() string {
+	return c.target
 }
 
 // Core exposes the typed client, used for Deployments, Events and the like.

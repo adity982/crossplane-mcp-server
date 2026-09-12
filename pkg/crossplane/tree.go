@@ -102,8 +102,13 @@ func childReferences(obj *unstructured.Unstructured) []objectReference {
 	}
 
 	// A composite resource points at everything it composed. Crossplane v2
-	// moved this to status.resourceRefs, so check both.
-	for _, path := range [][]string{{"spec", "resourceRefs"}, {"status", "resourceRefs"}} {
+	// moved this under spec.crossplane, next to the composition reference,
+	// and older versions used spec or status, so check all three.
+	for _, path := range [][]string{
+		{"spec", "crossplane", "resourceRefs"},
+		{"spec", "resourceRefs"},
+		{"status", "resourceRefs"},
+	} {
 		for _, item := range nestedSlice(obj, path...) {
 			entry, ok := item.(map[string]any)
 			if !ok {

@@ -37,6 +37,24 @@ func TestChildReferences(t *testing.T) {
 				{APIVersion: "ec2.aws.upbound.io/v1beta1", Kind: "SecurityGroup", Name: "sg-1"},
 			},
 		},
+		"CrossplaneV2KeepsRefsUnderSpecCrossplane": {
+			object: newObject(map[string]any{
+				"metadata": map[string]any{"namespace": "harmony-staging"},
+				"spec": map[string]any{"crossplane": map[string]any{"resourceRefs": []any{
+					map[string]any{
+						"apiVersion": "dbforpostgresql.azure.upbound.io/v1beta1",
+						"kind":       "FlexibleServer",
+						"name":       "postgresql-psql-v1-staging-1",
+					},
+				}}},
+			}),
+			want: []objectReference{{
+				APIVersion: "dbforpostgresql.azure.upbound.io/v1beta1",
+				Kind:       "FlexibleServer",
+				Name:       "postgresql-psql-v1-staging-1",
+				Namespace:  "harmony-staging",
+			}},
+		},
 		"IncompleteReferencesAreIgnored": {
 			object: newObject(map[string]any{
 				"spec": map[string]any{"resourceRefs": []any{

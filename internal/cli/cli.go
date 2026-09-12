@@ -34,6 +34,7 @@ type options struct {
 	kubeconfig  string
 	context     string
 	namespace   string
+	clusters    []string
 	toolsets    []string
 	httpAddress string
 	logLevel    string
@@ -85,7 +86,10 @@ anything on the control plane.`,
 	flags.StringVar(&opts.kubeconfig, "kubeconfig", "",
 		"Path to a kubeconfig file. Defaults to $KUBECONFIG, then ~/.kube/config, then in-cluster credentials.")
 	flags.StringVar(&opts.context, "context", "",
-		"Name of the kubeconfig context to use. Defaults to the current context.")
+		"Name of the kubeconfig context to use by default. Defaults to the current context.")
+	flags.StringSliceVar(&opts.clusters, "clusters", nil,
+		"Comma separated kubeconfig contexts to expose as targets. Defaults to every context. "+
+			"Tools take a 'cluster' argument to choose between them.")
 	flags.StringVar(&opts.namespace, "namespace", "",
 		"Default namespace for namespaced resources. Defaults to the namespace of the selected context.")
 	flags.StringSliceVar(&opts.toolsets, "toolsets", nil,
@@ -115,23 +119,21 @@ func run(ctx context.Context, opts *options) error {
 		return err
 	}
 
-	resolved, err := kube.Load(kube.Options{
+	resolved, err := kube.NewLoader(kube.Options{
 		Kubeconfig: opts.kubeconfig,
 		Context:    opts.context,
 		Namespace:  opts.namespace,
+		Clusters:   opts.clusters,
 	})
 	if err != nil {
 		return err
 	}
-	logger.Info("connected", "context", resolved.Context, "namespace", resolved.Namespace)
 
-	client, err := crossplane.New(resolved.RESTConfig, resolved.Namespace)
-	if err != nil {
-		return err
-	}
+	provider := crossplane.NewProvider(resolved)
+	logger.Info("ready", "defaultCluster", provider.Default(), "clusters", len(provider.Targets()))
 
 	server, err := mcp.NewServer(mcp.Config{
-		Client:      client,
+		Provider:    provider,
 		Toolsets:    selected,
 		Logger:      logger,
 		ToolTimeout: opts.toolTimeout,

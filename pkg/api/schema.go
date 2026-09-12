@@ -39,8 +39,17 @@ func IntProp(description string) *jsonschema.Schema {
 	return &jsonschema.Schema{Type: "integer", Description: description}
 }
 
+// ClusterArg is the argument name used to select a cluster. It is added to
+// every tool's schema by the MCP layer rather than declared tool by tool, so
+// that it cannot drift.
+const ClusterArg = "cluster"
+
 // Shared argument schemas. Reused verbatim across tools.
 var (
+	// ClusterProp selects which control plane a call is addressed to.
+	ClusterProp = StringProp("Which control plane to query. Omit to use the default one. " +
+		"Call crossplane_clusters_list to see the available clusters.")
+
 	// NamespaceProp is the namespace selector used by namespaced tools.
 	NamespaceProp = StringProp("Namespace to search. Omit to search every namespace. " +
 		"Crossplane v1 managed resources are cluster scoped and ignore this argument.")

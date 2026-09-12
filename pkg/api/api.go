@@ -18,8 +18,12 @@ import (
 type Params struct {
 	context.Context
 
-	// Client talks to the Crossplane control plane.
+	// Client talks to the cluster this call is addressed to, which is the
+	// one named by the "cluster" argument or the default.
 	Client *crossplane.Client
+	// Provider gives access to every cluster this server can reach. Tools
+	// that operate on one cluster should use Client instead.
+	Provider *crossplane.Provider
 	// Args holds the arguments the model passed.
 	Args *Args
 }

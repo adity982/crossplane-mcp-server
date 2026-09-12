@@ -36,7 +36,7 @@ func TestNewServerRejectsDuplicateToolNames(t *testing.T) {
 	}
 
 	_, err := NewServer(Config{
-		Client: newFakeClient(),
+		Provider: newFakeProvider(),
 		Toolsets: []api.Toolset{
 			&testToolset{name: "first", tools: []api.Tool{tool}},
 			&testToolset{name: "second", tools: []api.Tool{tool}},
@@ -50,12 +50,12 @@ func TestNewServerRejectsDuplicateToolNames(t *testing.T) {
 func TestNewServerRequiresAClient(t *testing.T) {
 	_, err := NewServer(Config{})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "crossplane client is required")
+	assert.Contains(t, err.Error(), "crossplane provider is required")
 }
 
 func TestServerExposesToolsOverTheProtocol(t *testing.T) {
 	server, err := NewServer(Config{
-		Client: newFakeClient(),
+		Provider: newFakeProvider(),
 		Toolsets: []api.Toolset{&testToolset{name: "test", tools: []api.Tool{
 			{
 				Name:        "crossplane_echo",
@@ -131,7 +131,8 @@ func connect(t *testing.T, server *Server) *sdk.ClientSession {
 	return clientSession
 }
 
-func newFakeClient() *crossplane.Client {
+func newFakeProvider() *crossplane.Provider {
 	core := k8sfake.NewSimpleClientset()
-	return crossplane.NewForClients(nil, core.Discovery(), core, "default")
+	client := crossplane.NewForClients(nil, core.Discovery(), core, "default")
+	return crossplane.NewStaticProvider("test-cluster", client)
 }

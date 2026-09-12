@@ -23,7 +23,9 @@ func (t *Toolset) Description() string {
 
 // Tools implements api.Toolset.
 func (t *Toolset) Tools() []api.Tool {
-	return append(diagnosticTools(), protectionTools()...)
+	tools := clusterTools()
+	tools = append(tools, diagnosticTools()...)
+	return append(tools, protectionTools()...)
 }
 
 func init() {
