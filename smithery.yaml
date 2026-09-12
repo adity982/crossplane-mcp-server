@@ -1,0 +1,22 @@
+# Smithery.ai configuration
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      kubeconfigPath:
+        type: string
+        description: Absolute path to your .kube directory or config file
+  commandFunction:
+    |-
+    (config) => ({
+      command: "docker",
+      args: [
+        "run",
+        "-i",
+        "--rm",
+        "-v",
+        `${config?.kubeconfigPath || process.env.HOME + '/.kube'}:/home/nonroot/.kube:ro`,
+        "ghcr.io/ravibagri5/crossplane-mcp-server:v0.1.3"
+      ]
+    })
