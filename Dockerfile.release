@@ -1,0 +1,18 @@
+# Used by GoReleaser only.
+#
+# GoReleaser builds images in a temporary context that holds the binaries it
+# has already compiled, not the repository, so this cannot build from source.
+# Use the Dockerfile in the repository root for that.
+FROM gcr.io/distroless/static-debian12:nonroot
+
+LABEL org.opencontainers.image.title="crossplane-mcp-server" \
+      org.opencontainers.image.description="Model Context Protocol server for Crossplane control planes" \
+      org.opencontainers.image.source="https://github.com/ravibagri5/crossplane-mcp-server" \
+      org.opencontainers.image.licenses="Apache-2.0"
+
+COPY crossplane-mcp-server /usr/local/bin/crossplane-mcp-server
+
+USER nonroot:nonroot
+
+# Default to stdio. Pass --http-address to serve HTTP instead.
+ENTRYPOINT ["/usr/local/bin/crossplane-mcp-server"]
