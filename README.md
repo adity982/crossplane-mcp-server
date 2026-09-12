@@ -41,6 +41,7 @@ anything on your control plane.
 - [Client configuration](#client-configuration)
 - [Tools](#tools)
 - [Configuration](#configuration)
+- [Multiple control planes](#multiple-control-planes)
 - [Running in a cluster](#running-in-a-cluster)
 - [Required RBAC](#required-rbac)
 - [Contributing](#contributing)
@@ -132,10 +133,36 @@ make build
   "mcpServers": {
     "crossplane": {
       "command": "crossplane-mcp-server",
-      "args": ["--context", "my-control-plane"]
+      "args": ["--clusters", "staging,production", "--context", "staging"],
+      "env": {
+        "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
+        "HOME": "/Users/you"
+      }
     }
   }
 }
+```
+
+`PATH` and `HOME` matter whenever a kubeconfig context authenticates through an
+exec plugin such as `kubelogin` or `aws`. Desktop applications launch servers
+with a near-empty environment, so without them the plugin is either not found
+or cannot read its token cache.
+
+### Goose
+
+In `~/.config/goose/config.yaml`:
+
+```yaml
+extensions:
+  crossplane:
+    enabled: true
+    type: stdio
+    cmd: /path/to/crossplane-mcp-server
+    args: ["--clusters", "staging,production", "--context", "staging"]
+    envs:
+      PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
+      HOME: /Users/you
+    timeout: 300
 ```
 
 ### VS Code
@@ -148,7 +175,7 @@ Add to `.vscode/mcp.json` in your workspace:
     "crossplane": {
       "type": "stdio",
       "command": "crossplane-mcp-server",
-      "args": []
+      "args": ["--clusters", "staging,production"]
     }
   }
 }
@@ -224,6 +251,7 @@ How the control plane itself is configured.
 
 | Tool | What it answers |
 | --- | --- |
+| `crossplane_clusters_list` | Which control planes this server can reach |
 | `crossplane_status` | The overall health of the control plane in one call |
 | `crossplane_unhealthy_resources` | Everything that is currently failing, and why |
 | `crossplane_deleting_resources` | What is stuck deleting, and what is holding it up |
@@ -241,13 +269,59 @@ crossplane-mcp-server --toolsets diagnostics,packages
 | Flag | Default | Description |
 | --- | --- | --- |
 | `--kubeconfig` | `$KUBECONFIG`, then `~/.kube/config`, then in-cluster | Path to a kubeconfig file |
-| `--context` | current context | Kubeconfig context to use |
+| `--context` | current context | Kubeconfig context used when a tool does not name a cluster |
+| `--clusters` | every context | Comma separated contexts to expose as targets |
 | `--namespace` | context namespace, else `default` | Default namespace for namespaced resources |
 | `--toolsets` | all | Comma separated toolsets to expose |
 | `--http-address` | *(unset)* | Serve streamable HTTP on this address instead of stdio |
 | `--log-level` | `info` | `debug`, `info`, `warn` or `error`. Logs always go to stderr |
 | `--tool-timeout` | `2m` | Maximum time a single tool call may run. `0` disables |
 | `--version` | | Print the version and exit |
+
+## Multiple control planes
+
+One server can talk to several control planes. Every tool takes an optional
+`cluster` argument naming one of them, and `crossplane_clusters_list` tells a
+model which are available.
+
+```shell
+crossplane-mcp-server --clusters staging,production --context staging
+```
+
+> Ask your assistant *"is anything failing in production?"* and it passes
+> `cluster: "production"`; omit the cluster and it uses `--context`.
+
+**Use `--clusters`.** Without it every context in your kubeconfig becomes a
+target, which on a machine with a few hundred contexts means an assistant could
+reach a production cluster when you meant a sandbox. Naming the handful you
+work with is both faster and safer.
+
+Clients are created lazily and cached, so an unreachable cluster does not stop
+the others from working, and listing clusters costs nothing.
+
+### Credentials
+
+| Source | How it works |
+| --- | --- |
+| Kubeconfig context | Used as-is, including contexts that authenticate through an exec plugin |
+| Cloud identity (AKS, EKS, GKE) | Works through the exec plugin the kubeconfig already declares, such as `kubelogin` or `aws` |
+| Service account | Used automatically when there is no kubeconfig, which is the case for the in-cluster deployment |
+
+Exec plugins are ordinary executables, so a server launched by a desktop
+application needs `PATH` to include them, and `HOME` so they can find their
+own token cache. Most MCP clients start servers with a near-empty environment,
+which is the usual reason a cluster works in a terminal but not in the client:
+
+```json
+{
+  "command": "crossplane-mcp-server",
+  "args": ["--clusters", "staging,production"],
+  "env": {
+    "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
+    "HOME": "/Users/you"
+  }
+}
+```
 
 ## Running in a cluster
 

@@ -12,6 +12,11 @@ a tool, or making an optional argument required, is a breaking change.
 
 ### Added
 
+- One server can now target several control planes. Every tool takes an
+  optional `cluster` argument, `--clusters` chooses which kubeconfig contexts
+  are exposed, and `crossplane_clusters_list` reports what is available.
+  Clients are built lazily and cached, so an unreachable cluster does not stop
+  the others from working.
 - `crossplane_xrd_schema` reports the fields a platform API takes, with an
   example manifest, so a composite resource can be written without guessing.
 - `crossplane_composition_validate` checks a Composition against the live
@@ -30,6 +35,9 @@ a tool, or making an optional argument required, is a breaking change.
 
 ### Fixed
 
+- Composition trees were empty on Crossplane v2. Composed resource references
+  moved to `spec.crossplane.resourceRefs`, so `crossplane_resource_tree`
+  reported only the root resource.
 - A client closing its end of the stdio pipe is no longer reported as an error.
   Every MCP client does this on shutdown, so the server exited non-zero on a
   normal disconnect.

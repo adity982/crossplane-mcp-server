@@ -5,6 +5,15 @@ the list from your own build.
 
 Every tool is read-only.
 
+## The `cluster` argument
+
+Every tool accepts an optional `cluster` argument naming the control plane to
+query. Omit it to use the server's default, set by `--context`. It is added to
+every tool's schema by the server rather than declared tool by tool, so it
+behaves identically everywhere and is not repeated in the tables below.
+
+Call `crossplane_clusters_list` to discover the valid names.
+
 ## Common workflows
 
 The tools are designed to chain. These are the paths worth knowing.
@@ -41,6 +50,12 @@ crossplane_xrds_list  →  crossplane_xrd_schema  →  crossplane_composition_re
 
 ```text
 crossplane_deleting_resources  →  crossplane_usages_list
+```
+
+**Ask about another control plane**
+
+```text
+crossplane_clusters_list  →  any tool, with cluster: "<name>"
 ```
 
 ---
@@ -273,6 +288,18 @@ No arguments.
 ---
 
 ## Toolset: `diagnostics`
+
+### `crossplane_clusters_list`
+
+The control planes this server can reach, with the credential source and API
+server of each. The default is marked.
+
+| Argument | Type | Required | Description |
+| --- | --- | --- | --- |
+| `search` | string | no | Case insensitive substring of the cluster name |
+| `limit` | integer | no | Maximum number to return, default 50 |
+
+Call this before naming a cluster you have not used yet, rather than guessing.
 
 ### `crossplane_status`
 
