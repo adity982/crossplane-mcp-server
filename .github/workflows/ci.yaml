@@ -144,5 +144,8 @@ jobs:
           push: false
           platforms: linux/amd64
           tags: crossplane-mcp-server:ci
+          # The GitHub Actions cache service intermittently rejects blob
+          # writes. Caching is an optimisation here, so never fail the job
+          # over it, and only cache the final layers rather than every stage.
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=min,ignore-error=true
