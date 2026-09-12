@@ -96,19 +96,10 @@ docker_manifests:
       - ghcr.io/ravibagri5/crossplane-mcp-server:latest-amd64
       - ghcr.io/ravibagri5/crossplane-mcp-server:latest-arm64
 
-brews:
-  - repository:
-      owner: ravibagri5
-      name: homebrew-tap
-    # Uploading needs a ravibagri5/homebrew-tap repository to exist and a
-    # HOMEBREW_TAP_TOKEN secret with write access to it. Until then the
-    # formula is generated but not published, so a release cannot fail here.
-    skip_upload: true
-    homepage: https://github.com/ravibagri5/crossplane-mcp-server
-    description: Model Context Protocol server for Crossplane control planes
-    license: Apache-2.0
-    test: |
-      system "#{bin}/crossplane-mcp-server", "--version"
+# Homebrew publishing is not configured. To add it, create a
+# ravibagri5/homebrew-tap repository, give the release workflow a token with
+# write access to it, and use homebrew_casks. The older brews section is
+# deprecated: https://goreleaser.com/deprecations#brews
 
 changelog:
   use: github
