@@ -87,6 +87,12 @@ and ask it about your control plane.
   pre-built binaries and the container image have no such requirement.
 - Access to a Kubernetes cluster with Crossplane installed. Any version of
   Crossplane v1 or v2 works.
+- Optional: the [crossplane CLI](https://docs.crossplane.io/latest/cli) and a
+  container runtime, used only by `crossplane_composition_render`. Rendering
+  executes the composition function pipeline, which cannot be done through the
+  Kubernetes API. Every other tool needs nothing beyond API access, and
+  `crossplane_composition_validate` covers most of the same ground without a
+  container runtime.
 
 ### Go install
 
@@ -197,8 +203,22 @@ Managed resources, composite resources and claims.
 | Tool | What it answers |
 | --- | --- |
 | `crossplane_xrds_list` | Which platform APIs this control plane offers |
+| `crossplane_xrd_schema` | The fields a platform API takes, with a ready-to-edit example manifest |
 | `crossplane_compositions_list` | Which Compositions exist and what pipeline they run |
 | `crossplane_composition_get` | The full definition of one Composition |
+| `crossplane_composition_validate` | Why a Composition does not work, without running anything |
+| `crossplane_composition_render` | What a Composition would actually create, as a dry run |
+
+### `config`
+
+How the control plane itself is configured.
+
+| Tool | What it answers |
+| --- | --- |
+| `crossplane_environment_configs_list` | Which EnvironmentConfigs exist and what data they hold |
+| `crossplane_deployment_runtime_configs_list` | Which runtime configs exist and which packages use them |
+| `crossplane_managed_resource_definitions_list` | Which managed resource kinds are Active, on Crossplane v2 |
+| `crossplane_managed_resource_activation_policies_list` | Which policies activate those definitions |
 
 ### `diagnostics`
 
@@ -206,6 +226,8 @@ Managed resources, composite resources and claims.
 | --- | --- |
 | `crossplane_status` | The overall health of the control plane in one call |
 | `crossplane_unhealthy_resources` | Everything that is currently failing, and why |
+| `crossplane_deleting_resources` | What is stuck deleting, and what is holding it up |
+| `crossplane_usages_list` | What is protected from deletion, and what needs it |
 | `crossplane_api_resources` | The Crossplane API surface, to find exact kinds and groups |
 
 Expose a subset with `--toolsets`:

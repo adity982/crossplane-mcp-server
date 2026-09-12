@@ -24,6 +24,7 @@ import (
 
 	// Importing the toolsets registers them.
 	_ "github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets/compositions"
+	_ "github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets/config"
 	_ "github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets/diagnostics"
 	_ "github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets/packages"
 	_ "github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets/resources"

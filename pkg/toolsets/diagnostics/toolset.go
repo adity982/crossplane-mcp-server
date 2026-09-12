@@ -17,12 +17,13 @@ func (t *Toolset) Name() string { return "diagnostics" }
 
 // Description implements api.Toolset.
 func (t *Toolset) Description() string {
-	return "Control plane health: overall status, everything that is failing, and the Crossplane API surface."
+	return "Control plane health: overall status, everything that is failing, stuck deletions, " +
+		"deletion protection and the Crossplane API surface."
 }
 
 // Tools implements api.Toolset.
 func (t *Toolset) Tools() []api.Tool {
-	return diagnosticTools()
+	return append(diagnosticTools(), protectionTools()...)
 }
 
 func init() {

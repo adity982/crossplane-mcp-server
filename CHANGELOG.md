@@ -10,6 +10,32 @@ a tool, or making an optional argument required, is a breaking change.
 
 ## [Unreleased]
 
+### Added
+
+- `crossplane_xrd_schema` reports the fields a platform API takes, with an
+  example manifest, so a composite resource can be written without guessing.
+- `crossplane_composition_validate` checks a Composition against the live
+  control plane without running anything: that its composite kind exists, that
+  every function it calls is installed and Healthy, and that its step names are
+  unique.
+- `crossplane_composition_render` runs a Composition's function pipeline as a
+  dry run, reading the Composition and its functions from the live control
+  plane. Requires the crossplane CLI and a container runtime.
+- `crossplane_deleting_resources` finds resources stuck deleting and explains
+  what is holding each one up.
+- `crossplane_usages_list` reports what is protected from deletion and what
+  needs it.
+- New `config` toolset covering EnvironmentConfigs, DeploymentRuntimeConfigs,
+  ManagedResourceDefinitions and ManagedResourceActivationPolicies.
+
+### Fixed
+
+- A client closing its end of the stdio pipe is no longer reported as an error.
+  Every MCP client does this on shutdown, so the server exited non-zero on a
+  normal disconnect.
+- The container image now runs as a numeric UID, so it starts under a pod
+  security context that requires `runAsNonRoot`.
+
 ## [0.1.0] - 2026-09-12
 
 First release. Everything below is new.

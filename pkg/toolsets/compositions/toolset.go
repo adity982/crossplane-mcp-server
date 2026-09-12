@@ -17,12 +17,13 @@ func (t *Toolset) Name() string { return "compositions" }
 
 // Description implements api.Toolset.
 func (t *Toolset) Description() string {
-	return "Platform API definitions: CompositeResourceDefinitions (XRDs) and Compositions."
+	return "Platform API definitions: CompositeResourceDefinitions (XRDs), Compositions, their schemas, " +
+		"static validation and dry-run rendering."
 }
 
 // Tools implements api.Toolset.
 func (t *Toolset) Tools() []api.Tool {
-	return compositionTools()
+	return append(compositionTools(), advancedTools()...)
 }
 
 func init() {

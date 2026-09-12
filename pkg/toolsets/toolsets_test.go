@@ -9,13 +9,14 @@ import (
 	"github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets"
 
 	_ "github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets/compositions"
+	_ "github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets/config"
 	_ "github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets/diagnostics"
 	_ "github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets/packages"
 	_ "github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets/resources"
 )
 
 func TestAllToolsetsAreRegistered(t *testing.T) {
-	assert.Equal(t, []string{"compositions", "diagnostics", "packages", "resources"}, toolsets.Names())
+	assert.Equal(t, []string{"compositions", "config", "diagnostics", "packages", "resources"}, toolsets.Names())
 }
 
 func TestSelect(t *testing.T) {
@@ -26,11 +27,11 @@ func TestSelect(t *testing.T) {
 	}{
 		"EmptySelectsEverything": {
 			names: nil,
-			want:  []string{"compositions", "diagnostics", "packages", "resources"},
+			want:  []string{"compositions", "config", "diagnostics", "packages", "resources"},
 		},
 		"AllSelectsEverything": {
 			names: []string{"all"},
-			want:  []string{"compositions", "diagnostics", "packages", "resources"},
+			want:  []string{"compositions", "config", "diagnostics", "packages", "resources"},
 		},
 		"SelectionKeepsRegistryOrder": {
 			names: []string{"resources", "diagnostics"},

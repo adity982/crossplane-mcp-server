@@ -15,8 +15,9 @@ set -eu
 
 SERVER="${SERVER:-./bin/crossplane-mcp-server}"
 
-if [ ! -x "$SERVER" ]; then
+if [ -z "${MCP_URL:-}" ] && [ ! -x "$SERVER" ]; then
 	echo "no server binary at $SERVER, run 'make build' first" >&2
+	echo "or set MCP_URL to reach a server over HTTP" >&2
 	exit 1
 fi
 
@@ -48,12 +49,67 @@ case "${1:-}" in
 	;;
 esac
 
-# The server shuts down as soon as stdin reaches EOF, so hold the pipe open
-# long enough for the response to come back. Raise WAIT for slow clusters.
-# Logs go to stderr and would otherwise bury the response.
+if [ -n "${MCP_URL:-}" ]; then
+	# Streamable HTTP needs a session: initialize returns an Mcp-Session-Id
+	# that every later request has to carry. Replies arrive as server-sent
+	# events, so strip the "data: " prefix before handing them to jq.
+	session=$(curl -sS -D - -o /dev/null -X POST "$MCP_URL" \
+		-H 'Content-Type: application/json' \
+		-H 'Accept: application/json, text/event-stream' \
+		-d "$init" | awk 'tolower($1) == "mcp-session-id:" { print $2 }' | tr -d '\r')
+
+	if [ -z "$session" ]; then
+		echo "no session id returned by $MCP_URL" >&2
+		exit 1
+	fi
+
+	curl -sS -o /dev/null -X POST "$MCP_URL" \
+		-H 'Content-Type: application/json' \
+		-H 'Accept: application/json, text/event-stream' \
+		-H "Mcp-Session-Id: $session" \
+		-d "$ready"
+
+	curl -sS -X POST "$MCP_URL" \
+		-H 'Content-Type: application/json' \
+		-H 'Accept: application/json, text/event-stream' \
+		-H "Mcp-Session-Id: $session" \
+		-d "$request" |
+		sed -n 's/^data: //p' |
+		jq -r "$filter"
+	exit 0
+fi
+
+# The server exits only when stdin reaches EOF, so a background writer holds
+# the pipe open. Both the writer and the server are killed as soon as the
+# response lands; waiting for them to finish on their own is what made this
+# feel slow. WAIT only caps how long we wait for a slow cluster.
+fifo=$(mktemp -u)
+out=$(mktemp)
+mkfifo "$fifo"
+trap 'rm -f "$fifo" "$out"' EXIT
+
 {
 	printf '%s\n%s\n%s\n' "$init" "$ready" "$request"
-	sleep "${WAIT:-5}"
-} |
-	"$SERVER" --log-level error 2>/dev/null |
-	jq -r "$filter"
+	sleep "${WAIT:-30}"
+} >"$fifo" &
+writer=$!
+
+"$SERVER" --log-level error <"$fifo" >"$out" 2>/dev/null &
+server=$!
+
+deadline=$(($(date +%s) + ${WAIT:-30}))
+while :; do
+	if jq -e 'select(.id==2)' "$out" >/dev/null 2>&1; then
+		break
+	fi
+	if [ "$(date +%s)" -ge "$deadline" ]; then
+		echo "timed out waiting for a response" >&2
+		break
+	fi
+	sleep 0.05
+done
+
+kill "$server" "$writer" 2>/dev/null || true
+wait "$server" "$writer" 2>/dev/null || true
+
+jq -r "$filter" <"$out"

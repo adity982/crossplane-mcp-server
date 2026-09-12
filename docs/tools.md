@@ -5,6 +5,44 @@ the list from your own build.
 
 Every tool is read-only.
 
+## Common workflows
+
+The tools are designed to chain. These are the paths worth knowing.
+
+**Triage a control plane**
+
+```text
+crossplane_status  →  crossplane_unhealthy_resources  →  crossplane_resource_get
+```
+
+**Work out why a claim is not ready**
+
+```text
+crossplane_resource_tree     find the deepest resource that is not Ready
+crossplane_resource_get      read its conditions
+crossplane_resource_events   the provider's real error usually lives here
+```
+
+**A kind you expect does not exist**
+
+```text
+crossplane_providers_list                      is the provider Healthy?
+crossplane_managed_resource_definitions_list   is the definition Active?  (v2)
+crossplane_api_resources                       what is actually installed
+```
+
+**Author against a platform API**
+
+```text
+crossplane_xrds_list  →  crossplane_xrd_schema  →  crossplane_composition_render
+```
+
+**A delete is hanging**
+
+```text
+crossplane_deleting_resources  →  crossplane_usages_list
+```
+
 ---
 
 ## Toolset: `resources`
@@ -134,6 +172,19 @@ each generates.
 | --- | --- | --- | --- |
 | `unhealthyOnly` | boolean | no | Only XRDs that are not established |
 
+### `crossplane_xrd_schema`
+
+The API contract of one platform API: apiVersion, kind, the shape of `spec`,
+which fields are required, and a minimal example manifest.
+
+| Argument | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | string | **yes** | Name of the XRD, e.g. `xpostgresqlinstances.example.org` |
+| `version` | string | no | Which version to describe. Defaults to the first served version |
+
+Call this before writing a composite resource, and before
+`crossplane_composition_render`, rather than guessing field names.
+
 ### `crossplane_compositions_list`
 
 Compositions with the composite kind each satisfies and the function pipeline
@@ -151,6 +202,73 @@ One Composition, including its full YAML.
 | --- | --- | --- | --- |
 | `name` | string | **yes** | Name of the Composition |
 | `manifest` | boolean | no | Include the full YAML, default `true` |
+
+### `crossplane_composition_validate`
+
+Static checks against the live control plane: does the composite kind exist, is
+every function in the pipeline installed and Healthy, are step names unique.
+
+| Argument | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | string | **yes** | Name of the Composition |
+
+Needs no container runtime, so prefer it for *"why does this Composition not
+work?"*. Use `crossplane_composition_render` for *"what does it produce?"*.
+
+### `crossplane_composition_render`
+
+Runs the function pipeline against a composite resource and returns what it
+would create, without touching the control plane. The equivalent of
+`crossplane render`.
+
+| Argument | Type | Required | Description |
+| --- | --- | --- | --- |
+| `composition` | string | **yes** | Name of the Composition to render |
+| `xr` | string | **yes** | YAML of the composite resource, including apiVersion, kind, metadata.name and spec |
+| `manifests` | boolean | no | Include the full rendered YAML, default `true` |
+
+The Composition and its functions are read from the **live control plane**, so
+the result reflects this cluster rather than local files.
+
+**Requires** the `crossplane` CLI and a container runtime on the machine running
+the server. If either is missing the tool says so and points at
+`crossplane_composition_validate`.
+
+---
+
+## Toolset: `config`
+
+How the control plane itself is configured.
+
+### `crossplane_environment_configs_list`
+
+EnvironmentConfigs and the data keys each holds. Compositions read these at
+render time for values that differ between environments.
+
+No arguments.
+
+### `crossplane_deployment_runtime_configs_list`
+
+DeploymentRuntimeConfigs and which providers or functions reference each one. A
+config nothing references is a common reason settings appear not to apply.
+
+No arguments.
+
+### `crossplane_managed_resource_definitions_list`
+
+ManagedResourceDefinitions on a Crossplane v2 control plane. An `Inactive`
+definition installs no CRD, so the kind does not exist — check here first when a
+provider is Healthy but an expected kind is missing.
+
+| Argument | Type | Required | Description |
+| --- | --- | --- | --- |
+| `state` | enum | no | `Active` or `Inactive` |
+
+### `crossplane_managed_resource_activation_policies_list`
+
+Which policies activate which ManagedResourceDefinitions, by name pattern.
+
+No arguments.
 
 ---
 
@@ -172,6 +290,27 @@ Everything that is currently failing, with the reason.
 | `namespace` | string | no | Restrict to one namespace |
 | `scope` | enum | no | `all`, `packages`, `managed`, `composite`, `claims` |
 | `limit` | integer | no | Cap on reported failures, default 100 |
+
+### `crossplane_deleting_resources`
+
+Resources asked to delete that have not gone away, and what is holding each
+up: a Usage protecting it, composed resources still being removed, or a
+provider that has not confirmed the external resource is gone.
+
+| Argument | Type | Required | Description |
+| --- | --- | --- | --- |
+| `namespace` | string | no | Restrict to one namespace |
+| `includeRecent` | boolean | no | Include deletions younger than 30s, default `false` |
+
+Use this whenever a delete appears to hang — `kubectl` reports success and then
+nothing happens, which makes this failure hard to spot any other way.
+
+### `crossplane_usages_list`
+
+Usage and ClusterUsage objects: what is protected from deletion, and what needs
+it.
+
+No arguments.
 
 ### `crossplane_api_resources`
 
