@@ -1,9 +1,9 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
-  "name": "io.github.crossplane-contrib/crossplane-mcp-server",
+  "name": "io.github.ravibagri5/crossplane-mcp-server",
   "description": "Read-only access to a Crossplane control plane: managed resources, composite resources, claims, packages, compositions and their health.",
   "repository": {
-    "url": "https://github.com/crossplane-contrib/crossplane-mcp-server",
+    "url": "https://github.com/ravibagri5/crossplane-mcp-server",
     "source": "github"
   },
   "version": "0.1.0",
@@ -11,7 +11,7 @@
     {
       "registryType": "oci",
       "registryBaseUrl": "https://ghcr.io",
-      "identifier": "crossplane-contrib/crossplane-mcp-server",
+      "identifier": "ravibagri5/crossplane-mcp-server",
       "version": "0.1.0",
       "transport": {
         "type": "stdio"

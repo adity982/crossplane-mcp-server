@@ -58,7 +58,7 @@ formatters:
   settings:
     goimports:
       local-prefixes:
-        - github.com/crossplane-contrib/crossplane-mcp-server
+        - github.com/ravibagri5/crossplane-mcp-server
 
 issues:
   max-issues-per-linter: 0

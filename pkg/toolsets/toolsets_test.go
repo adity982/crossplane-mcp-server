@@ -6,12 +6,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/crossplane-contrib/crossplane-mcp-server/pkg/toolsets"
+	"github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets"
 
-	_ "github.com/crossplane-contrib/crossplane-mcp-server/pkg/toolsets/compositions"
-	_ "github.com/crossplane-contrib/crossplane-mcp-server/pkg/toolsets/diagnostics"
-	_ "github.com/crossplane-contrib/crossplane-mcp-server/pkg/toolsets/packages"
-	_ "github.com/crossplane-contrib/crossplane-mcp-server/pkg/toolsets/resources"
+	_ "github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets/compositions"
+	_ "github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets/diagnostics"
+	_ "github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets/packages"
+	_ "github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets/resources"
 )
 
 func TestAllToolsetsAreRegistered(t *testing.T) {

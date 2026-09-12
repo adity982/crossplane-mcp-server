@@ -21,16 +21,16 @@ ENV CGO_ENABLED=0
 RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
     -trimpath \
     -ldflags "-s -w \
-      -X github.com/crossplane-contrib/crossplane-mcp-server/pkg/version.Version=${VERSION} \
-      -X github.com/crossplane-contrib/crossplane-mcp-server/pkg/version.Commit=${COMMIT} \
-      -X github.com/crossplane-contrib/crossplane-mcp-server/pkg/version.BuildDate=${BUILD_DATE}" \
+      -X github.com/ravibagri5/crossplane-mcp-server/pkg/version.Version=${VERSION} \
+      -X github.com/ravibagri5/crossplane-mcp-server/pkg/version.Commit=${COMMIT} \
+      -X github.com/ravibagri5/crossplane-mcp-server/pkg/version.BuildDate=${BUILD_DATE}" \
     -o /out/crossplane-mcp-server ./cmd/crossplane-mcp-server
 
 FROM gcr.io/distroless/static-debian12:nonroot
 
 LABEL org.opencontainers.image.title="crossplane-mcp-server" \
       org.opencontainers.image.description="Model Context Protocol server for Crossplane control planes" \
-      org.opencontainers.image.source="https://github.com/crossplane-contrib/crossplane-mcp-server" \
+      org.opencontainers.image.source="https://github.com/ravibagri5/crossplane-mcp-server" \
       org.opencontainers.image.licenses="Apache-2.0"
 
 COPY --from=build /out/crossplane-mcp-server /usr/local/bin/crossplane-mcp-server

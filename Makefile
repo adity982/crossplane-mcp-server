@@ -5,7 +5,7 @@
 SHELL := /usr/bin/env bash -o errexit -o pipefail -o nounset
 
 BINARY      := crossplane-mcp-server
-MODULE      := github.com/crossplane-contrib/crossplane-mcp-server
+MODULE      := github.com/ravibagri5/crossplane-mcp-server
 PKG_VERSION := $(MODULE)/pkg/version
 
 OUT_DIR   := bin
@@ -59,7 +59,7 @@ image: ## Build the container image
 		--build-arg VERSION=$(VERSION) \
 		--build-arg COMMIT=$(COMMIT) \
 		--build-arg BUILD_DATE=$(BUILD_DATE) \
-		-t ghcr.io/crossplane-contrib/$(BINARY):$(VERSION) .
+		-t ghcr.io/ravibagri5/$(BINARY):$(VERSION) .
 
 ##@ Test
 

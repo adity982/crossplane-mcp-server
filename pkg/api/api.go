@@ -11,7 +11,7 @@ import (
 	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/crossplane-contrib/crossplane-mcp-server/pkg/crossplane"
+	"github.com/ravibagri5/crossplane-mcp-server/pkg/crossplane"
 )
 
 // Params is everything a tool handler is given.

@@ -70,7 +70,7 @@ This server encodes that knowledge:
 ## Quick start
 
 ```shell
-go install github.com/crossplane-contrib/crossplane-mcp-server/cmd/crossplane-mcp-server@latest
+go install github.com/ravibagri5/crossplane-mcp-server/cmd/crossplane-mcp-server@latest
 
 # Check it can see your control plane
 crossplane-mcp-server tools
@@ -84,13 +84,7 @@ and ask it about your control plane.
 ### Go install
 
 ```shell
-go install github.com/crossplane-contrib/crossplane-mcp-server/cmd/crossplane-mcp-server@latest
-```
-
-### Homebrew
-
-```shell
-brew install crossplane-contrib/tap/crossplane-mcp-server
+go install github.com/ravibagri5/crossplane-mcp-server/cmd/crossplane-mcp-server@latest
 ```
 
 ### Container image
@@ -98,13 +92,22 @@ brew install crossplane-contrib/tap/crossplane-mcp-server
 ```shell
 docker run --rm -i \
   -v "${HOME}/.kube:/home/nonroot/.kube:ro" \
-  ghcr.io/crossplane-contrib/crossplane-mcp-server:latest
+  ghcr.io/ravibagri5/crossplane-mcp-server:latest
 ```
 
 ### Binaries
 
 Pre-built binaries for Linux, macOS and Windows are attached to every
-[release](https://github.com/crossplane-contrib/crossplane-mcp-server/releases).
+[release](https://github.com/ravibagri5/crossplane-mcp-server/releases).
+
+### From source
+
+```shell
+git clone https://github.com/ravibagri5/crossplane-mcp-server.git
+cd crossplane-mcp-server
+make build
+./bin/crossplane-mcp-server tools
+```
 
 ## Client configuration
 
@@ -147,7 +150,7 @@ Add to `.vscode/mcp.json` in your workspace:
       "args": [
         "run", "--rm", "-i",
         "-v", "${HOME}/.kube:/home/nonroot/.kube:ro",
-        "ghcr.io/crossplane-contrib/crossplane-mcp-server:latest"
+        "ghcr.io/ravibagri5/crossplane-mcp-server:latest"
       ]
     }
   }
@@ -270,7 +273,7 @@ narrows the permissions at the cost of some tools returning warnings.
 Contributions are very welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md),
 which covers the development workflow, how to add a tool, and the sign-off
 requirement. Good first issues are labelled
-[`good first issue`](https://github.com/crossplane-contrib/crossplane-mcp-server/labels/good%20first%20issue).
+[`good first issue`](https://github.com/ravibagri5/crossplane-mcp-server/labels/good%20first%20issue).
 
 This project follows the [Crossplane Code of Conduct](CODE_OF_CONDUCT.md) and is
 governed as described in [GOVERNANCE.md](GOVERNANCE.md).

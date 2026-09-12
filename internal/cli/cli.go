@@ -4,6 +4,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -14,18 +15,18 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/crossplane-contrib/crossplane-mcp-server/pkg/api"
-	"github.com/crossplane-contrib/crossplane-mcp-server/pkg/crossplane"
-	"github.com/crossplane-contrib/crossplane-mcp-server/pkg/kube"
-	"github.com/crossplane-contrib/crossplane-mcp-server/pkg/mcp"
-	"github.com/crossplane-contrib/crossplane-mcp-server/pkg/toolsets"
-	"github.com/crossplane-contrib/crossplane-mcp-server/pkg/version"
+	"github.com/ravibagri5/crossplane-mcp-server/pkg/api"
+	"github.com/ravibagri5/crossplane-mcp-server/pkg/crossplane"
+	"github.com/ravibagri5/crossplane-mcp-server/pkg/kube"
+	"github.com/ravibagri5/crossplane-mcp-server/pkg/mcp"
+	"github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets"
+	"github.com/ravibagri5/crossplane-mcp-server/pkg/version"
 
 	// Importing the toolsets registers them.
-	_ "github.com/crossplane-contrib/crossplane-mcp-server/pkg/toolsets/compositions"
-	_ "github.com/crossplane-contrib/crossplane-mcp-server/pkg/toolsets/diagnostics"
-	_ "github.com/crossplane-contrib/crossplane-mcp-server/pkg/toolsets/packages"
-	_ "github.com/crossplane-contrib/crossplane-mcp-server/pkg/toolsets/resources"
+	_ "github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets/compositions"
+	_ "github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets/diagnostics"
+	_ "github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets/packages"
+	_ "github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets/resources"
 )
 
 type options struct {
@@ -195,14 +196,18 @@ func newToolsCommand() *cobra.Command {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			var out strings.Builder
 			for _, toolset := range toolsets.All() {
-				fmt.Fprintf(cmd.OutOrStdout(), "%s: %s\n", toolset.Name(), toolset.Description())
+				fmt.Fprintf(&out, "%s: %s\n", toolset.Name(), toolset.Description())
 				for _, tool := range toolset.Tools() {
-					fmt.Fprintf(cmd.OutOrStdout(), "  %-40s %s\n", tool.Name, summarise(tool))
+					fmt.Fprintf(&out, "  %-40s %s\n", tool.Name, summarise(tool))
 				}
-				fmt.Fprintln(cmd.OutOrStdout())
+				out.WriteString("\n")
 			}
-			return nil
+			// Reporting the write error matters here: piping into head closes
+			// the pipe early and we should exit rather than carry on.
+			_, err := io.WriteString(cmd.OutOrStdout(), out.String())
+			return err
 		},
 	}
 }

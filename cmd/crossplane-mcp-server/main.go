@@ -5,7 +5,7 @@ package main
 import (
 	"os"
 
-	"github.com/crossplane-contrib/crossplane-mcp-server/internal/cli"
+	"github.com/ravibagri5/crossplane-mcp-server/internal/cli"
 )
 
 func main() {

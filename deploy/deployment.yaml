@@ -65,7 +65,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: crossplane-mcp-server
-          image: ghcr.io/crossplane-contrib/crossplane-mcp-server:latest
+          image: ghcr.io/ravibagri5/crossplane-mcp-server:latest
           args:
             - --http-address=:8080
             - --log-level=info

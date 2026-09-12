@@ -15,9 +15,9 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/crossplane-contrib/crossplane-mcp-server/pkg/api"
-	"github.com/crossplane-contrib/crossplane-mcp-server/pkg/crossplane"
-	"github.com/crossplane-contrib/crossplane-mcp-server/pkg/version"
+	"github.com/ravibagri5/crossplane-mcp-server/pkg/api"
+	"github.com/ravibagri5/crossplane-mcp-server/pkg/crossplane"
+	"github.com/ravibagri5/crossplane-mcp-server/pkg/version"
 )
 
 // Config configures the MCP server.
@@ -54,7 +54,7 @@ func NewServer(config Config) (*Server, error) {
 		Name:       version.BinaryName,
 		Title:      "Crossplane",
 		Version:    version.Version,
-		WebsiteURL: "https://github.com/crossplane-contrib/crossplane-mcp-server",
+		WebsiteURL: "https://github.com/ravibagri5/crossplane-mcp-server",
 		Description: "Read-only access to a Crossplane control plane: managed resources, composite resources, " +
 			"claims, packages, compositions and their health.",
 	}

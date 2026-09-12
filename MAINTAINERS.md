@@ -7,11 +7,12 @@ This file lists the people responsible for this project. See
 
 | Name | GitHub | Area |
 | --- | --- | --- |
-| _Your name here_ | [@your-handle](https://github.com/your-handle) | Everything |
+| Ravi Bagri | [@ravibagri5](https://github.com/ravibagri5) | Everything |
 
-Maintainers can be reached at `maintainers@crossplane-mcp-server.dev` for
-private matters, including security reports. For anything that can be public,
-please open an issue instead: it helps the next person with the same question.
+For private matters, including security reports, use
+[GitHub's private vulnerability reporting](https://github.com/ravibagri5/crossplane-mcp-server/security/advisories/new).
+For anything that can be public, please open an issue instead: it helps the
+next person with the same question.
 
 ## Reviewers
 

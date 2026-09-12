@@ -8,8 +8,8 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/yaml"
 
-	"github.com/crossplane-contrib/crossplane-mcp-server/pkg/api"
-	"github.com/crossplane-contrib/crossplane-mcp-server/pkg/crossplane"
+	"github.com/ravibagri5/crossplane-mcp-server/pkg/api"
+	"github.com/ravibagri5/crossplane-mcp-server/pkg/crossplane"
 )
 
 func inspectionTools() []api.Tool {
@@ -62,9 +62,9 @@ func inspectionTools() []api.Tool {
 }
 
 func resourceGet(p api.Params) (*api.Result, error) {
-	obj, result, err := resolveResource(p)
-	if result != nil || err != nil {
-		return result, err
+	obj, failure := resolveResource(p)
+	if failure != nil {
+		return failure, nil
 	}
 	includeManifest := p.Args.OptionalBool("manifest", false)
 	if argErr := p.Args.Err(); argErr != nil {
@@ -122,9 +122,9 @@ func resourceGet(p api.Params) (*api.Result, error) {
 }
 
 func resourceTree(p api.Params) (*api.Result, error) {
-	obj, result, err := resolveResource(p)
-	if result != nil || err != nil {
-		return result, err
+	obj, failure := resolveResource(p)
+	if failure != nil {
+		return failure, nil
 	}
 
 	tree := p.Client.Tree(p, obj)
@@ -145,9 +145,9 @@ func resourceTree(p api.Params) (*api.Result, error) {
 }
 
 func resourceEvents(p api.Params) (*api.Result, error) {
-	obj, result, err := resolveResource(p)
-	if result != nil || err != nil {
-		return result, err
+	obj, failure := resolveResource(p)
+	if failure != nil {
+		return failure, nil
 	}
 
 	events, err := p.Client.EventsFor(p, obj)
@@ -171,18 +171,18 @@ func resourceEvents(p api.Params) (*api.Result, error) {
 //
 // It returns either the object, or a Result describing why it could not be
 // found. Exactly one of the two is non-nil.
-func resolveResource(p api.Params) (*unstructured.Unstructured, *api.Result, error) {
+func resolveResource(p api.Params) (*unstructured.Unstructured, *api.Result) {
 	kind := p.Args.String("kind")
 	name := p.Args.String("name")
 	group := p.Args.OptionalString("group", "")
 	namespace := p.Args.OptionalString("namespace", "")
 	if err := p.Args.Err(); err != nil {
-		return nil, api.Error(err), nil
+		return nil, api.Error(err)
 	}
 
 	resource, err := p.Client.ResolveKind(p, kind, group)
 	if err != nil {
-		return nil, api.Error(err), nil
+		return nil, api.Error(err)
 	}
 	if resource.Namespaced && namespace == "" {
 		namespace = p.Client.DefaultNamespace()
@@ -190,9 +190,9 @@ func resolveResource(p api.Params) (*unstructured.Unstructured, *api.Result, err
 
 	obj, err := p.Client.Get(p, resource, namespace, name)
 	if err != nil {
-		return nil, api.Error(err), nil
+		return nil, api.Error(err)
 	}
-	return obj, nil, nil
+	return obj, nil
 }
 
 func renderConditions(conditions []crossplane.Condition) string {

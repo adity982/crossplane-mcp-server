@@ -15,8 +15,9 @@ patched; please upgrade.
 **Do not open a public issue for a security problem.**
 
 Report privately using
-[GitHub's private vulnerability reporting](https://github.com/crossplane-contrib/crossplane-mcp-server/security/advisories/new),
-or email the maintainers listed in [MAINTAINERS.md](MAINTAINERS.md).
+[GitHub's private vulnerability reporting](https://github.com/ravibagri5/crossplane-mcp-server/security/advisories/new),
+which notifies the maintainers listed in [MAINTAINERS.md](MAINTAINERS.md)
+without disclosing anything publicly.
 
 Please include:
 

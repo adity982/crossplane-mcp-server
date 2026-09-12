@@ -4,8 +4,8 @@
 package packages
 
 import (
-	"github.com/crossplane-contrib/crossplane-mcp-server/pkg/api"
-	"github.com/crossplane-contrib/crossplane-mcp-server/pkg/toolsets"
+	"github.com/ravibagri5/crossplane-mcp-server/pkg/api"
+	"github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets"
 )
 
 // Toolset is the "packages" toolset.

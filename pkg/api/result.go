@@ -62,9 +62,10 @@ func Errorf(format string, args ...any) *Result {
 func Table(headers []string, rows [][]string) string {
 	var b strings.Builder
 	w := tabwriter.NewWriter(&b, 0, 0, 3, ' ', 0)
-	fmt.Fprintln(w, strings.Join(headers, "\t"))
+	// Writes into a strings.Builder cannot fail, so the errors are dropped.
+	_, _ = fmt.Fprintln(w, strings.Join(headers, "\t"))
 	for _, row := range rows {
-		fmt.Fprintln(w, strings.Join(row, "\t"))
+		_, _ = fmt.Fprintln(w, strings.Join(row, "\t"))
 	}
 	_ = w.Flush()
 	return strings.TrimRight(b.String(), "\n")

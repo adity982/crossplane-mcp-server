@@ -6,8 +6,8 @@ import (
 
 	"github.com/google/jsonschema-go/jsonschema"
 
-	"github.com/crossplane-contrib/crossplane-mcp-server/pkg/api"
-	"github.com/crossplane-contrib/crossplane-mcp-server/pkg/crossplane"
+	"github.com/ravibagri5/crossplane-mcp-server/pkg/api"
+	"github.com/ravibagri5/crossplane-mcp-server/pkg/crossplane"
 )
 
 func packageTools() []api.Tool {
