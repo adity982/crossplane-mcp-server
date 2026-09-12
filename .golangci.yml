@@ -5,12 +5,15 @@ run:
 
 linters:
   default: standard
+  # goconst is deliberately absent. This server exists to emit JSON payloads
+  # and render tables, so repeated literals such as "count", "namespace" and
+  # "AGE" are data rather than magic values, and hoisting them into constants
+  # makes the tool schemas and table headers harder to read.
   enable:
     - bodyclose
     - copyloopvar
     - errorlint
     - gocritic
-    - goconst
     - misspell
     - nolintlint
     - prealloc
@@ -34,10 +37,6 @@ linters:
         - name: context-as-argument
         - name: unexported-return
 
-    goconst:
-      min-len: 3
-      min-occurrences: 4
-
     gocritic:
       disabled-checks:
         - ifElseChain
@@ -47,7 +46,6 @@ linters:
       # Tests are allowed to be repetitive and to skip the doc comments.
       - path: _test\.go
         linters:
-          - goconst
           - revive
           - unparam
 

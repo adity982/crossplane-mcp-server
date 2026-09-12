@@ -45,8 +45,9 @@ func All() []api.Toolset {
 
 // Names returns the names of every registered toolset, ordered.
 func Names() []string {
-	names := make([]string, 0)
-	for _, ts := range All() {
+	all := All()
+	names := make([]string, 0, len(all))
+	for _, ts := range all {
 		names = append(names, ts.Name())
 	}
 	return names
