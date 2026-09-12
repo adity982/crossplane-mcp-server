@@ -1,6 +1,6 @@
 # Build the binary in a full Go image, then ship it on a distroless base so the
 # published image contains the server and nothing else.
-FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS build
+FROM --platform=$BUILDPLATFORM golang:1.27-alpine AS build
 
 ARG TARGETOS
 ARG TARGETARCH
