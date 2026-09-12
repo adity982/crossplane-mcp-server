@@ -61,6 +61,10 @@ spec:
       serviceAccountName: crossplane-mcp-server
       securityContext:
         runAsNonRoot: true
+        # The kubelet cannot verify a non-numeric image user, so name the UID
+        # explicitly. 65532 is nonroot in the distroless base image.
+        runAsUser: 65532
+        runAsGroup: 65532
         seccompProfile:
           type: RuntimeDefault
       containers:

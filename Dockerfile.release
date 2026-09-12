@@ -12,7 +12,8 @@ LABEL org.opencontainers.image.title="crossplane-mcp-server" \
 
 COPY crossplane-mcp-server /usr/local/bin/crossplane-mcp-server
 
-USER nonroot:nonroot
+# Numeric, because a Kubernetes runAsNonRoot check cannot verify a user name.
+USER 65532:65532
 
 # Default to stdio. Pass --http-address to serve HTTP instead.
 ENTRYPOINT ["/usr/local/bin/crossplane-mcp-server"]
