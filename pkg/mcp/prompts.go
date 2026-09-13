@@ -9,10 +9,9 @@ import (
 
 // prompt is a named workflow offered to the user.
 //
-// Tools tell a model what it *can* do; prompts tell it the order an
-// experienced operator would do things in. Encoding the sequence here means a
-// model does not have to rediscover, on every conversation, that diagnosing a
-// claim starts at the claim and not at the managed resource that looks angriest.
+// Tools say what a model can do; prompts say the order to do it in, so it does
+// not rediscover on every conversation that diagnosing a claim starts at the
+// claim rather than at the managed resource that looks angriest.
 type prompt struct {
 	name        string
 	title       string

@@ -113,7 +113,7 @@ func compositionValidate(p api.Params) (*api.Result, error) {
 
 	var text strings.Builder
 	fmt.Fprintf(&text, "Composition %s satisfies %s, mode %s.",
-		validation.Composition, orDash(validation.CompositeKind), orDash(validation.Mode))
+		validation.Composition, api.OrDash(validation.CompositeKind), api.OrDash(validation.Mode))
 	if len(validation.Functions) > 0 {
 		fmt.Fprintf(&text, "\nPipeline: %s", strings.Join(validation.Functions, " -> "))
 	}
@@ -156,7 +156,7 @@ func compositionRender(p api.Params) (*api.Result, error) {
 
 	rows := make([][]string, 0, len(rendered.Resources))
 	for _, resource := range rendered.Resources {
-		rows = append(rows, []string{resource.Kind, resource.APIVersion, resource.Name, orDash(resource.ComposedBy)})
+		rows = append(rows, []string{resource.Kind, resource.APIVersion, resource.Name, api.OrDash(resource.ComposedBy)})
 	}
 	fmt.Fprintf(&text, "%d resource(s) would be created.\n", len(rendered.Resources))
 	text.WriteString(api.Table([]string{"KIND", "APIVERSION", "NAME", "COMPOSED AS"}, rows))

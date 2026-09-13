@@ -130,7 +130,10 @@ your tool. Treat it as production code.
 
 ## Code style
 
-- Run `make fmt` before pushing. CI checks formatting.
+- Run `make check` before pushing. It runs the same formatting, vet, lint and
+  test steps CI does, and the linter is stricter than `go vet` alone: `prealloc`
+  wants `make([]T, 0, n)` rather than `var x []T` when you append in a loop, and
+  `unparam` rejects parameters nothing reads.
 - Comments explain *why*, not *what*. If a line needs a comment to say what it
   does, rewrite the line. Most of the comments in this repo exist because
   Crossplane does something surprising and the next reader deserves a warning.
@@ -140,6 +143,31 @@ your tool. Treat it as production code.
 - Prefer small, named functions over long ones with section comments.
 - Do not add a dependency without discussing it in an issue first. The
   dependency footprint is deliberately small.
+
+### Conventions a tool is expected to follow
+
+These are enforced by review rather than by the compiler, so they are worth
+stating:
+
+- **Return a map, not a struct.** Every handler ends with
+  `api.Structured(text, map[string]any{...})`. The values inside may be typed —
+  `crossplane.Summary`, `crossplane.Usage` and friends carry their own json
+  tags — but the envelope is a map. A named payload struct reads fine in
+  isolation and then makes this tool the odd one out.
+- **Report failures as a result, not an error.** `return api.Error(err), nil`.
+  A returned error means the tool itself is broken and becomes a protocol
+  error; an unreachable cluster or a missing resource is an answer the model
+  should get to read.
+- **Use the shared rendering helpers** in `pkg/api`: `Table`, `Section`,
+  `Warnings`, `OrDash`, `Path`. These were once copied into five packages.
+  Reach for `strconv.Itoa` rather than writing another `itoa`.
+- **Name handlers after the thing then the verb**, matching the tool name:
+  `resourceGet`, `usagesList`, `driftDetect`. Group constructors end in
+  `Tools()`.
+- **Every tool is read only.** There is no code path in this server that
+  creates, updates or deletes, and `api.Tool.Destructive` exists to keep the
+  annotations honest if that ever changes. A pull request that adds a write
+  needs to argue for it first.
 
 ## Testing
 
@@ -151,10 +179,24 @@ your tool. Treat it as production code.
   `TestChildReferencesDeduplicates`, not `TestChildReferences2`.
 - Anything that talks to a cluster is tested against fakes. There are no tests
   that require a live control plane in CI.
+- Test the pure logic. Handlers mostly fetch and format, but the decisions
+  inside them — which failure is the root cause, whether drift will be
+  corrected, which Usage blocks a delete — are ordinary functions over plain
+  values, and those are where the bugs live. `deepestUnready`, `diffFields` and
+  `classifyUsages` are the pattern to copy.
 
 ```shell
 make test
 make test-coverage   # writes coverage.out and prints a summary
+make check           # everything CI runs: verify, vet, lint, test
+```
+
+A quick way to see what a tool really returns, without a client:
+
+```shell
+make build
+./bin/crossplane-mcp-server call crossplane_status
+./bin/crossplane-mcp-server call crossplane_diagnose '{"kind":"Bucket","name":"data"}' --json
 ```
 
 ## Commit messages and sign-off

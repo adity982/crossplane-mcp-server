@@ -59,7 +59,7 @@ func deletingResources(p api.Params) (*api.Result, error) {
 	var text strings.Builder
 	if len(deleting) == 0 {
 		text.WriteString("Nothing is stuck deleting.")
-		appendWarnings(&text, warnings)
+		api.Warnings(&text, warnings)
 		return api.Structured(text.String(), payload), nil
 	}
 
@@ -67,7 +67,7 @@ func deletingResources(p api.Params) (*api.Result, error) {
 	for _, resource := range deleting {
 		rows = append(rows, []string{
 			resource.Kind,
-			orDash(resource.Namespace),
+			api.OrDash(resource.Namespace),
 			resource.Name,
 			resource.DeletingFor,
 			resource.Reason,
@@ -94,7 +94,7 @@ func deletingResources(p api.Params) (*api.Result, error) {
 		}
 	}
 	api.Section(&text, "Detail:", strings.TrimRight(detail.String(), "\n"))
-	appendWarnings(&text, warnings)
+	api.Warnings(&text, warnings)
 
 	return api.Structured(text.String(), payload), nil
 }
@@ -117,10 +117,10 @@ func usagesList(p api.Params) (*api.Result, error) {
 		}
 		rows = append(rows, []string{
 			usage.Name,
-			orDash(usage.Namespace),
+			api.OrDash(usage.Namespace),
 			usage.OfKind + "/" + usage.OfName,
 			needs,
-			orDash(usage.Reason),
+			api.OrDash(usage.Reason),
 			usage.Age,
 		})
 	}
@@ -131,11 +131,4 @@ func usagesList(p api.Params) (*api.Result, error) {
 		[]string{"NAME", "NAMESPACE", "PROTECTS", "NEEDED BY", "REASON", "AGE"}, rows))
 
 	return api.Structured(text.String(), map[string]any{"count": len(usages), "usages": usages}), nil
-}
-
-func appendWarnings(text *strings.Builder, warnings []string) {
-	if len(warnings) == 0 {
-		return
-	}
-	api.Section(text, fmt.Sprintf("Warnings (%d):", len(warnings)), "- "+strings.Join(warnings, "\n- "))
 }

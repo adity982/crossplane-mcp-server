@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/google/jsonschema-go/jsonschema"
@@ -233,11 +234,11 @@ func renderDrift(reports []drifted, inspected int, driftedOnly bool, warnings []
 		}
 		rows = append(rows, []string{
 			r.Kind,
-			resourcePath(r.Namespace, r.Name),
-			itoa(len(r.Fields)),
+			api.Path(r.Namespace, r.Name),
+			strconv.Itoa(len(r.Fields)),
 			r.Synced,
 			state,
-			orDash(r.Reason),
+			api.OrDash(r.Reason),
 		})
 	}
 	api.Section(&text, "Summary:",
@@ -251,7 +252,7 @@ func renderDrift(reports []drifted, inspected int, driftedOnly bool, warnings []
 		for _, f := range r.Fields {
 			fieldRows = append(fieldRows, []string{f.Path, f.Declared, f.Observed})
 		}
-		api.Section(&text, fmt.Sprintf("%s %s:", r.Kind, resourcePath(r.Namespace, r.Name)),
+		api.Section(&text, fmt.Sprintf("%s %s:", r.Kind, api.Path(r.Namespace, r.Name)),
 			api.Table([]string{"FIELD", "DECLARED", "OBSERVED"}, fieldRows))
 	}
 

@@ -83,3 +83,30 @@ func Section(b *strings.Builder, title, body string) {
 	b.WriteString("\n")
 	b.WriteString(body)
 }
+
+// Warnings appends the list of kinds a tool could not read. Partial answers are
+// normal on a control plane where RBAC hides some resources, so a tool says
+// what it missed rather than failing.
+func Warnings(b *strings.Builder, warnings []string) {
+	if len(warnings) == 0 {
+		return
+	}
+	Section(b, fmt.Sprintf("Warnings (%d):", len(warnings)), "- "+strings.Join(warnings, "\n- "))
+}
+
+// OrDash renders an empty string as a dash, so table columns stay aligned and
+// the model can tell "not set" from "not reported".
+func OrDash(s string) string {
+	if s == "" {
+		return "-"
+	}
+	return s
+}
+
+// Path renders a resource as namespace/name, or just name when cluster scoped.
+func Path(namespace, name string) string {
+	if namespace == "" {
+		return name
+	}
+	return namespace + "/" + name
+}

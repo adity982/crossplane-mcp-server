@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/google/jsonschema-go/jsonschema"
@@ -68,7 +69,7 @@ func environmentConfigsList(p api.Params) (*api.Result, error) {
 	rows := make([][]string, 0, len(configs))
 	for _, config := range configs {
 		rows = append(rows, []string{
-			config.Name, itoa(len(config.Keys)), orDash(strings.Join(config.Keys, ", ")), config.Age,
+			config.Name, strconv.Itoa(len(config.Keys)), api.OrDash(strings.Join(config.Keys, ", ")), config.Age,
 		})
 	}
 
@@ -98,8 +99,8 @@ func deploymentRuntimeConfigsList(p api.Params) (*api.Result, error) {
 		}
 		rows = append(rows, []string{
 			config.Name,
-			orDash(config.ServiceAccount),
-			orDash(strings.Join(config.UsedBy, ", ")),
+			api.OrDash(config.ServiceAccount),
+			api.OrDash(strings.Join(config.UsedBy, ", ")),
 			config.Age,
 		})
 	}
@@ -136,7 +137,7 @@ func managedResourceDefinitionsList(p api.Params) (*api.Result, error) {
 		}
 		rows = append(rows, []string{
 			definition.Name, definition.ManagedKind, definition.Group,
-			orDash(definition.State), definition.Ready, definition.Age,
+			api.OrDash(definition.State), definition.Ready, definition.Age,
 		})
 	}
 
@@ -164,8 +165,8 @@ func activationPoliciesList(p api.Params) (*api.Result, error) {
 	for _, policy := range policies {
 		rows = append(rows, []string{
 			policy.Name,
-			orDash(strings.Join(policy.Activate, ", ")),
-			itoa(len(policy.Activated)),
+			api.OrDash(strings.Join(policy.Activate, ", ")),
+			strconv.Itoa(len(policy.Activated)),
 			policy.Ready,
 			policy.Age,
 		})
@@ -178,12 +179,3 @@ func activationPoliciesList(p api.Params) (*api.Result, error) {
 	return api.Structured(text.String(),
 		map[string]any{"count": len(policies), "activationPolicies": policies}), nil
 }
-
-func orDash(s string) string {
-	if s == "" {
-		return "-"
-	}
-	return s
-}
-
-func itoa(n int) string { return fmt.Sprintf("%d", n) }

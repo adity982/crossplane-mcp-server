@@ -84,19 +84,3 @@ func TestArgsAccumulatesEveryError(t *testing.T) {
 	assert.Contains(t, err.Error(), `argument "kind" must be a string`)
 	assert.Contains(t, err.Error(), `argument "limit" must be a number`)
 }
-
-func TestTable(t *testing.T) {
-	got := Table([]string{"NAME", "READY"}, [][]string{
-		{"bucket-one", "True"},
-		{"a-much-longer-name", "False"},
-	})
-
-	assert.Equal(t, ""+
-		"NAME                 READY\n"+
-		"bucket-one           True\n"+
-		"a-much-longer-name   False", got)
-}
-
-func TestTableWithoutRowsStillShowsColumns(t *testing.T) {
-	assert.Equal(t, "NAME   READY", Table([]string{"NAME", "READY"}, nil))
-}

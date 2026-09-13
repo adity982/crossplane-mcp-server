@@ -2,6 +2,7 @@ package diagnostics
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/google/jsonschema-go/jsonschema"
@@ -100,7 +101,7 @@ func status(p api.Params) (*api.Result, error) {
 			unhealthy = append(unhealthy, pkg.Name)
 		}
 		packageRows = append(packageRows, []string{
-			string(kind) + "s", itoa(len(installed)), itoa(healthy), orDash(strings.Join(unhealthy, ", ")),
+			string(kind) + "s", strconv.Itoa(len(installed)), strconv.Itoa(healthy), api.OrDash(strings.Join(unhealthy, ", ")),
 		})
 		packageStats[strings.ToLower(string(kind))+"s"] = map[string]any{
 			"installed": len(installed),
@@ -121,11 +122,11 @@ func status(p api.Params) (*api.Result, error) {
 			}
 		}
 		definitionRows = append(definitionRows,
-			[]string{"CompositeResourceDefinitions", itoa(len(xrds)), itoa(established)})
+			[]string{"CompositeResourceDefinitions", strconv.Itoa(len(xrds)), strconv.Itoa(established)})
 		payload["xrds"] = map[string]any{"total": len(xrds), "established": established}
 	}
 	if found, err := p.Client.Compositions(p, ""); err == nil {
-		definitionRows = append(definitionRows, []string{"Compositions", itoa(len(found)), "-"})
+		definitionRows = append(definitionRows, []string{"Compositions", strconv.Itoa(len(found)), "-"})
 		payload["compositions"] = map[string]any{"total": len(found)}
 	}
 	api.Section(&text, "Platform APIs:", api.Table([]string{"KIND", "TOTAL", "ESTABLISHED"}, definitionRows))
@@ -148,7 +149,7 @@ func status(p api.Params) (*api.Result, error) {
 		summaries := crossplane.Summaries(result.Objects, false)
 		ready, synced := countConditions(summaries)
 		resourceRows = append(resourceRows, []string{
-			entry.label, itoa(len(summaries)), itoa(ready), itoa(synced),
+			entry.label, strconv.Itoa(len(summaries)), strconv.Itoa(ready), strconv.Itoa(synced),
 		})
 		resourceStats[entry.category] = map[string]any{
 			"total":    len(summaries),
@@ -193,7 +194,7 @@ func unhealthyResources(p api.Params) (*api.Result, error) {
 					continue
 				}
 				rows = append(rows, []string{
-					string(kind), pkg.Name, pkg.Installed, pkg.Healthy, pkg.Age, orDash(pkg.Message),
+					string(kind), pkg.Name, pkg.Installed, pkg.Healthy, pkg.Age, api.OrDash(pkg.Message),
 				})
 				broken = append(broken, map[string]any{
 					"type": string(kind), "name": pkg.Name, "package": pkg.Package,
@@ -219,7 +220,7 @@ func unhealthyResources(p api.Params) (*api.Result, error) {
 					continue
 				}
 				broken = append(broken, xrd)
-				rows = append(rows, []string{xrd.Name, xrd.CompositeKind, xrd.Ready, xrd.Age, orDash(xrd.Message)})
+				rows = append(rows, []string{xrd.Name, xrd.CompositeKind, xrd.Ready, xrd.Age, api.OrDash(xrd.Message)})
 			}
 			total += len(broken)
 			payload["xrds"] = broken
@@ -262,7 +263,7 @@ func unhealthyResources(p api.Params) (*api.Result, error) {
 		rows := make([][]string, 0, len(shown))
 		for _, s := range shown {
 			rows = append(rows, []string{
-				s.Kind, orDash(s.Namespace), s.Name, s.Ready, s.Synced, s.Age, orDash(s.Message),
+				s.Kind, api.OrDash(s.Namespace), s.Name, s.Ready, s.Synced, s.Age, api.OrDash(s.Message),
 			})
 		}
 		title := fmt.Sprintf("Failing %s (%d):", entry.label, len(failing))
@@ -352,12 +353,3 @@ func countConditions(summaries []crossplane.Summary) (ready, synced int) {
 	}
 	return ready, synced
 }
-
-func orDash(s string) string {
-	if s == "" {
-		return "-"
-	}
-	return s
-}
-
-func itoa(n int) string { return fmt.Sprintf("%d", n) }

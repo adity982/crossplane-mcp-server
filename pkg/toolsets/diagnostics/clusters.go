@@ -75,8 +75,8 @@ func clustersList(p api.Params) (*api.Result, error) {
 			marker,
 			target.Name,
 			string(target.Source),
-			orDash(target.AuthProvider),
-			orDash(target.Server),
+			api.OrDash(target.AuthProvider),
+			api.OrDash(target.Server),
 		})
 	}
 

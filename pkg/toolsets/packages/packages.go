@@ -98,7 +98,7 @@ func listPackages(kind crossplane.PackageKind) api.Handler {
 				healthy++
 			}
 			rows = append(rows, []string{
-				pkg.Name, pkg.Package, pkg.Installed, pkg.Healthy, pkg.Age, orDash(pkg.Message),
+				pkg.Name, pkg.Package, pkg.Installed, pkg.Healthy, pkg.Age, api.OrDash(pkg.Message),
 			})
 		}
 
@@ -171,7 +171,7 @@ func renderConditions(conditions []crossplane.Condition) string {
 	}
 	rows := make([][]string, 0, len(conditions))
 	for _, c := range conditions {
-		rows = append(rows, []string{c.Type, c.Status, orDash(c.Reason), orDash(c.Message)})
+		rows = append(rows, []string{c.Type, c.Status, api.OrDash(c.Reason), api.OrDash(c.Message)})
 	}
 	return api.Table([]string{"TYPE", "STATUS", "REASON", "MESSAGE"}, rows)
 }
@@ -182,14 +182,7 @@ func renderRevisions(revisions []crossplane.Summary) string {
 	}
 	rows := make([][]string, 0, len(revisions))
 	for _, r := range revisions {
-		rows = append(rows, []string{r.Name, r.Synced, r.Ready, r.Age, orDash(r.Message)})
+		rows = append(rows, []string{r.Name, r.Synced, r.Ready, r.Age, api.OrDash(r.Message)})
 	}
 	return api.Table([]string{"NAME", "INSTALLED", "HEALTHY", "AGE", "MESSAGE"}, rows)
-}
-
-func orDash(s string) string {
-	if s == "" {
-		return "-"
-	}
-	return s
 }

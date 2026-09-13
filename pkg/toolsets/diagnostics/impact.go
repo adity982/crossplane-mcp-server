@@ -31,17 +31,19 @@ func impactTools() []api.Tool {
 	}
 }
 
-// impactReport is what the model reads.
+// impactReport gathers the answer as it is assembled. It is not the payload:
+// the fields are handed to the renderer and then published as a map, the same
+// shape every other tool returns.
 type impactReport struct {
-	Kind          string             `json:"kind"`
-	Name          string             `json:"name"`
-	Namespace     string             `json:"namespace,omitempty"`
-	Blocked       bool               `json:"blocked"`
-	BlockedBy     []crossplane.Usage `json:"blockedBy,omitempty"`
-	Dangling      []crossplane.Usage `json:"dangling,omitempty"`
-	WouldDelete   []doomed           `json:"wouldDelete"`
-	ExternalCount int                `json:"externalResourceCount"`
-	Verdict       string             `json:"verdict"`
+	Kind          string
+	Name          string
+	Namespace     string
+	Blocked       bool
+	BlockedBy     []crossplane.Usage
+	Dangling      []crossplane.Usage
+	WouldDelete   []doomed
+	ExternalCount int
+	Verdict       string
 }
 
 // doomed is a resource that would go away with the one being deleted.
@@ -101,15 +103,24 @@ func impact(p api.Params) (*api.Result, error) {
 	report.Blocked = len(report.BlockedBy) > 0
 	report.Verdict = impactVerdict(report)
 
-	return api.Structured(renderImpact(report, tree), report), nil
+	return api.Structured(renderImpact(report, tree), map[string]any{
+		"kind":                  report.Kind,
+		"name":                  report.Name,
+		"namespace":             report.Namespace,
+		"verdict":               report.Verdict,
+		"blocked":               report.Blocked,
+		"blockedBy":             report.BlockedBy,
+		"dangling":              report.Dangling,
+		"wouldDelete":           report.WouldDelete,
+		"externalResourceCount": report.ExternalCount,
+	}), nil
 }
 
-// collectDoomed flattens the composition tree. Everything below the root goes
-// when the root goes, and the root itself goes too.
+// collectDoomed flattens the composition tree: everything below the root goes
+// when the root goes, and so does the root.
 //
-// A leaf is a managed resource: composites and claims always reference
-// something below them, so anything with no children is what actually holds
-// the external infrastructure.
+// A leaf is a managed resource, because composites and claims always reference
+// something below them.
 func collectDoomed(node crossplane.TreeNode, acc []doomed) []doomed {
 	acc = append(acc, doomed{
 		Kind:       node.Kind,
@@ -168,7 +179,7 @@ func renderImpact(report impactReport, tree crossplane.TreeNode) string {
 	var text strings.Builder
 
 	fmt.Fprintf(&text, "Deletion impact for %s %s\n\nVerdict: %s\n",
-		report.Kind, path(report.Namespace, report.Name), report.Verdict)
+		report.Kind, api.Path(report.Namespace, report.Name), report.Verdict)
 
 	rows := make([][]string, 0, len(report.WouldDelete))
 	for _, d := range report.WouldDelete {
@@ -176,7 +187,7 @@ func renderImpact(report impactReport, tree crossplane.TreeNode) string {
 		if d.Managed {
 			kindOfThing = "managed"
 		}
-		rows = append(rows, []string{d.Kind, path(d.Namespace, d.Name), kindOfThing, orDash(d.ExternalName)})
+		rows = append(rows, []string{d.Kind, api.Path(d.Namespace, d.Name), kindOfThing, api.OrDash(d.ExternalName)})
 	}
 	api.Section(&text, fmt.Sprintf("Would be deleted (%d):", len(report.WouldDelete)),
 		api.Table([]string{"KIND", "NAME", "ROLE", "EXTERNAL NAME"}, rows))
@@ -199,14 +210,7 @@ func renderUsageRows(usages []crossplane.Usage) string {
 		if u.ByKind != "" {
 			needs = u.ByKind + "/" + u.ByName
 		}
-		rows = append(rows, []string{u.Name, u.OfKind + "/" + u.OfName, needs, orDash(u.Reason)})
+		rows = append(rows, []string{u.Name, u.OfKind + "/" + u.OfName, needs, api.OrDash(u.Reason)})
 	}
 	return api.Table([]string{"USAGE", "PROTECTS", "NEEDED BY", "REASON"}, rows)
-}
-
-func path(namespace, name string) string {
-	if namespace == "" {
-		return name
-	}
-	return namespace + "/" + name
 }

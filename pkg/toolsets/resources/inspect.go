@@ -2,6 +2,7 @@ package resources
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/google/jsonschema-go/jsonschema"
@@ -92,7 +93,7 @@ func resourceGet(p api.Params) (*api.Result, error) {
 	}
 
 	var text strings.Builder
-	fmt.Fprintf(&text, "%s %s", summary.Kind, resourcePath(summary.Namespace, summary.Name))
+	fmt.Fprintf(&text, "%s %s", summary.Kind, api.Path(summary.Namespace, summary.Name))
 	fmt.Fprintf(&text, "\napiVersion: %s\nage: %s", summary.APIVersion, summary.Age)
 	if external := crossplane.ExternalName(obj); external != "" {
 		fmt.Fprintf(&text, "\nexternal-name: %s", external)
@@ -156,7 +157,7 @@ func resourceEvents(p api.Params) (*api.Result, error) {
 	}
 	if len(events) == 0 {
 		return api.Structured(fmt.Sprintf("No events recorded against %s %s.",
-			obj.GetKind(), resourcePath(obj.GetNamespace(), obj.GetName())),
+			obj.GetKind(), api.Path(obj.GetNamespace(), obj.GetName())),
 			map[string]any{"count": 0, "events": []crossplane.Event{}}), nil
 	}
 
@@ -201,7 +202,7 @@ func renderConditions(conditions []crossplane.Condition) string {
 	}
 	rows := make([][]string, 0, len(conditions))
 	for _, c := range conditions {
-		rows = append(rows, []string{c.Type, c.Status, orDash(c.Reason), orDash(c.Message), orDash(c.LastTransitionTime)})
+		rows = append(rows, []string{c.Type, c.Status, api.OrDash(c.Reason), api.OrDash(c.Message), api.OrDash(c.LastTransitionTime)})
 	}
 	return api.Table([]string{"TYPE", "STATUS", "REASON", "MESSAGE", "LAST TRANSITION"}, rows)
 }
@@ -212,7 +213,7 @@ func renderEvents(events []crossplane.Event) string {
 	}
 	rows := make([][]string, 0, len(events))
 	for _, e := range events {
-		rows = append(rows, []string{e.Type, e.Reason, e.Age, itoa(int(e.Count)), e.Message})
+		rows = append(rows, []string{e.Type, e.Reason, e.Age, strconv.Itoa(int(e.Count)), e.Message})
 	}
 	return api.Table([]string{"TYPE", "REASON", "AGE", "COUNT", "MESSAGE"}, rows)
 }
@@ -248,11 +249,4 @@ func indexObjects(objects []unstructured.Unstructured) map[string]*unstructured.
 
 func objectKey(kind, namespace, name string) string {
 	return kind + "/" + namespace + "/" + name
-}
-
-func resourcePath(namespace, name string) string {
-	if namespace == "" {
-		return name
-	}
-	return namespace + "/" + name
 }

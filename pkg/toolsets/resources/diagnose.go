@@ -12,8 +12,8 @@ import (
 )
 
 // maxRootCauses caps how many failing resources are investigated in depth. A
-// broken Composition can leave dozens of resources unready, and they almost
-// always share one cause, so reporting every one of them buries the answer.
+// broken Composition leaves dozens of resources unready that share one cause,
+// and reporting every one of them buries the answer.
 const maxRootCauses = 5
 
 func diagnosisTools() []api.Tool {
@@ -36,16 +36,6 @@ func diagnosisTools() []api.Tool {
 			Handler: diagnose,
 		},
 	}
-}
-
-// diagnosis is the structured payload the model reads.
-type diagnosis struct {
-	Root       crossplane.Summary  `json:"root"`
-	Ready      bool                `json:"ready"`
-	Verdict    string              `json:"verdict"`
-	RootCauses []rootCause         `json:"rootCauses"`
-	Checks     []check             `json:"checks"`
-	Tree       crossplane.TreeNode `json:"tree"`
 }
 
 // rootCause is one failing resource, with the evidence gathered about it.
@@ -82,12 +72,12 @@ func diagnose(p api.Params) (*api.Result, error) {
 
 	if summary.Ready == crossplane.StatusTrue {
 		text := fmt.Sprintf("%s %s is Ready. Nothing to diagnose.\n\n%s",
-			summary.Kind, resourcePath(summary.Namespace, summary.Name), crossplane.RenderTree(tree))
-		return api.Structured(text, diagnosis{
-			Root:    summary,
-			Ready:   true,
-			Verdict: "Ready",
-			Tree:    tree,
+			summary.Kind, api.Path(summary.Namespace, summary.Name), crossplane.RenderTree(tree))
+		return api.Structured(text, map[string]any{
+			"root":    summary,
+			"ready":   true,
+			"verdict": "Ready",
+			"tree":    tree,
 		}), nil
 	}
 
@@ -95,21 +85,20 @@ func diagnose(p api.Params) (*api.Result, error) {
 	checks := controlPlaneChecks(p, obj, tree)
 	verdict := verdictFor(summary, causes, checks)
 
-	return api.Structured(renderDiagnosis(summary, tree, causes, checks, verdict), diagnosis{
-		Root:       summary,
-		Ready:      false,
-		Verdict:    verdict,
-		RootCauses: causes,
-		Checks:     checks,
-		Tree:       tree,
+	return api.Structured(renderDiagnosis(summary, tree, causes, checks, verdict), map[string]any{
+		"root":       summary,
+		"ready":      false,
+		"verdict":    verdict,
+		"rootCauses": causes,
+		"checks":     checks,
+		"tree":       tree,
 	}), nil
 }
 
 // deepestUnready returns the unready nodes that have no unready descendants.
 //
-// A claim is almost always reported as not Ready simply because something far
-// below it failed, so the node the user asked about is the least interesting
-// one in the tree. The leaves of the failure are the answer.
+// A claim is almost always unready because something far below it failed, so
+// the node the user asked about is the least interesting one in the tree.
 func deepestUnready(node crossplane.TreeNode) []crossplane.TreeNode {
 	below := make([]crossplane.TreeNode, 0, len(node.Children))
 	for _, child := range node.Children {
@@ -260,18 +249,18 @@ func renderDiagnosis(root crossplane.Summary, tree crossplane.TreeNode, causes [
 	var text strings.Builder
 
 	fmt.Fprintf(&text, "%s %s is NOT READY.\n\nVerdict: %s\n",
-		root.Kind, resourcePath(root.Namespace, root.Name), verdict)
+		root.Kind, api.Path(root.Namespace, root.Name), verdict)
 
 	if len(causes) > 0 {
 		rows := make([][]string, 0, len(causes))
 		for _, c := range causes {
 			rows = append(rows, []string{
 				c.Kind,
-				resourcePath(c.Namespace, c.Name),
+				api.Path(c.Namespace, c.Name),
 				c.Ready,
 				c.Synced,
-				orDash(c.Reason),
-				orDash(firstNonEmpty(c.ProviderError, c.Message)),
+				api.OrDash(c.Reason),
+				api.OrDash(firstNonEmpty(c.ProviderError, c.Message)),
 			})
 		}
 		api.Section(&text, "Root causes (deepest failing resources):",

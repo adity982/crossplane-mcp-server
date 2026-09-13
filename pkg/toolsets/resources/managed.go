@@ -2,6 +2,7 @@ package resources
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/google/jsonschema-go/jsonschema"
@@ -84,7 +85,7 @@ func managedResourcesSummary(p api.Params) (*api.Result, error) {
 		rows = append(rows, []string{
 			c.Kind,
 			c.APIVersion,
-			itoa(c.Total),
+			strconv.Itoa(c.Total),
 			fmt.Sprintf("%d/%d", c.Ready, c.Total),
 			fmt.Sprintf("%d/%d", c.Synced, c.Total),
 		})
@@ -112,7 +113,7 @@ func managedResourcesSummary(p api.Params) (*api.Result, error) {
 	if total > 0 {
 		api.Section(&text, "", api.Table([]string{"KIND", "APIVERSION", "TOTAL", "READY", "SYNCED"}, rows))
 	}
-	appendWarnings(&text, result.Warnings)
+	api.Warnings(&text, result.Warnings)
 
 	return api.Structured(text.String(), payload), nil
 }
@@ -177,7 +178,7 @@ func renderSummaries(noun string, summaries []crossplane.Summary, warnings []str
 	var text strings.Builder
 	if len(summaries) == 0 {
 		text.WriteString("No " + noun + " matched.")
-		appendWarnings(&text, warnings)
+		api.Warnings(&text, warnings)
 		return text.String()
 	}
 
@@ -198,31 +199,14 @@ func renderSummaries(noun string, summaries []crossplane.Summary, warnings []str
 	for _, s := range summaries {
 		row := []string{s.Kind}
 		if namespaced {
-			row = append(row, orDash(s.Namespace))
+			row = append(row, api.OrDash(s.Namespace))
 		}
-		row = append(row, s.Name, s.Ready, s.Synced, s.Age, orDash(s.Message))
+		row = append(row, s.Name, s.Ready, s.Synced, s.Age, api.OrDash(s.Message))
 		rows = append(rows, row)
 	}
 
 	fmt.Fprintf(&text, "%d %s.\n", len(summaries), noun)
 	text.WriteString(api.Table(headers, rows))
-	appendWarnings(&text, warnings)
+	api.Warnings(&text, warnings)
 	return text.String()
 }
-
-func appendWarnings(text *strings.Builder, warnings []string) {
-	if len(warnings) == 0 {
-		return
-	}
-	api.Section(text, fmt.Sprintf("Warnings (%d kinds could not be listed):", len(warnings)),
-		"- "+strings.Join(warnings, "\n- "))
-}
-
-func orDash(s string) string {
-	if s == "" {
-		return "-"
-	}
-	return s
-}
-
-func itoa(n int) string { return fmt.Sprintf("%d", n) }

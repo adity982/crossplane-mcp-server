@@ -83,11 +83,11 @@ func xrdsList(p api.Params) (*api.Result, error) {
 			xrd.Name,
 			xrd.Group,
 			xrd.CompositeKind,
-			orDash(xrd.ClaimKind),
-			orDash(strings.Join(xrd.Versions, ",")),
+			api.OrDash(xrd.ClaimKind),
+			api.OrDash(strings.Join(xrd.Versions, ",")),
 			xrd.Ready,
 			xrd.Age,
-			orDash(xrd.Message),
+			api.OrDash(xrd.Message),
 		})
 	}
 
@@ -171,11 +171,4 @@ func compositionGet(p api.Params) (*api.Result, error) {
 	}
 
 	return api.Structured(text.String(), payload), nil
-}
-
-func orDash(s string) string {
-	if s == "" {
-		return "-"
-	}
-	return s
 }

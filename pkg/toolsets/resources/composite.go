@@ -99,8 +99,8 @@ func listCategory(p api.Params, category, noun string) (*api.Result, error) {
 		}
 		entries = append(entries, entry{Summary: s, Composition: composition})
 		rows = append(rows, []string{
-			s.Kind, orDash(s.Namespace), s.Name, orDash(composition),
-			s.Ready, s.Synced, s.Age, orDash(s.Message),
+			s.Kind, api.OrDash(s.Namespace), s.Name, api.OrDash(composition),
+			s.Ready, s.Synced, s.Age, api.OrDash(s.Message),
 		})
 	}
 
@@ -112,7 +112,7 @@ func listCategory(p api.Params, category, noun string) (*api.Result, error) {
 		text.WriteString(api.Table(
 			[]string{"KIND", "NAMESPACE", "NAME", "COMPOSITION", "READY", "SYNCED", "AGE", "MESSAGE"}, rows))
 	}
-	appendWarnings(&text, result.Warnings)
+	api.Warnings(&text, result.Warnings)
 
 	return api.Structured(text.String(), map[string]any{
 		"count":     len(entries),
