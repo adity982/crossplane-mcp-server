@@ -19,8 +19,6 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/ravibagri5/crossplane-mcp-server/pkg/api"
-	"github.com/ravibagri5/crossplane-mcp-server/pkg/crossplane"
-	"github.com/ravibagri5/crossplane-mcp-server/pkg/kube"
 	"github.com/ravibagri5/crossplane-mcp-server/pkg/mcp"
 	"github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets"
 	"github.com/ravibagri5/crossplane-mcp-server/pkg/version"
@@ -107,6 +105,7 @@ anything on the control plane.`,
 
 	cmd.AddCommand(newToolsCommand())
 	cmd.AddCommand(newPromptsCommand())
+	cmd.AddCommand(newCallCommand(opts))
 	return cmd
 }
 
@@ -118,30 +117,7 @@ func run(ctx context.Context, opts *options) error {
 
 	logger := newLogger(opts.logLevel)
 
-	selected, err := toolsets.Select(opts.toolsets)
-	if err != nil {
-		return err
-	}
-
-	resolved, err := kube.NewLoader(kube.Options{
-		Kubeconfig: opts.kubeconfig,
-		Context:    opts.context,
-		Namespace:  opts.namespace,
-		Clusters:   opts.clusters,
-	})
-	if err != nil {
-		return err
-	}
-
-	provider := crossplane.NewProvider(resolved)
-	logger.Info("ready", "defaultCluster", provider.Default(), "clusters", len(provider.Targets()))
-
-	server, err := mcp.NewServer(mcp.Config{
-		Provider:    provider,
-		Toolsets:    selected,
-		Logger:      logger,
-		ToolTimeout: opts.toolTimeout,
-	})
+	server, err := buildServer(opts)
 	if err != nil {
 		return err
 	}

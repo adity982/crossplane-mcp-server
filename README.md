@@ -50,6 +50,7 @@ anything on your control plane.
 - [Client configuration](#client-configuration)
 - [Tools](#tools)
 - [Prompts](#prompts)
+- [Calling a tool directly](#calling-a-tool-directly)
 - [Configuration](#configuration)
 - [Multiple control planes](#multiple-control-planes)
 - [Running in a cluster](#running-in-a-cluster)
@@ -103,8 +104,11 @@ Underneath, the Crossplane knowledge this server encodes is:
 ```shell
 go install github.com/ravibagri5/crossplane-mcp-server/cmd/crossplane-mcp-server@latest
 
-# Check it can see your control plane
+# See what this build exposes
 crossplane-mcp-server tools
+
+# Check it can reach your control plane
+crossplane-mcp-server call crossplane_status
 ```
 
 Then add it to your MCP client (see [Client configuration](#client-configuration))
@@ -324,6 +328,30 @@ Most clients surface these as slash commands or a prompt picker.
 | `control_plane_review` | Produces a health report ordered by what needs attention first |
 | `explain_platform_api` | Explains what a platform API offers and how to ask for one |
 | `assess_deletion` | Works out the blast radius of a deletion before anyone runs it |
+
+## Calling a tool directly
+
+`call` runs one tool and prints what it returns, without an MCP client in the
+way. Use it to check the server can reach your cluster, and to see what a tool
+really returns rather than what a model says it returned.
+
+```shell
+# No arguments
+crossplane-mcp-server call crossplane_status
+
+# Arguments are the same JSON an MCP client would send
+crossplane-mcp-server call crossplane_managed_resources_list '{"status":"not-ready"}'
+crossplane-mcp-server call crossplane_diagnose '{"kind":"Bucket","name":"app-data"}'
+
+# The structured payload the model receives, instead of the text rendering
+crossplane-mcp-server call crossplane_status --json
+
+# Against another control plane
+crossplane-mcp-server call crossplane_status --context prod
+```
+
+Run `crossplane-mcp-server tools --json` to see the exact arguments a tool
+accepts.
 
 ## Configuration
 

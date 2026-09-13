@@ -125,14 +125,40 @@ func withClusterArgument(schema *jsonschema.Schema) *jsonschema.Schema {
 }
 
 func (s *Server) call(ctx context.Context, tool api.Tool, request *sdk.CallToolRequest) (*sdk.CallToolResult, error) {
-	started := time.Now()
-
 	arguments := map[string]any{}
 	if raw := request.Params.Arguments; len(raw) > 0 {
 		if err := json.Unmarshal(raw, &arguments); err != nil {
 			return errorResult(fmt.Errorf("cannot parse arguments: %w", err)), nil
 		}
 	}
+
+	result, err := s.invoke(ctx, tool, arguments)
+	if err != nil {
+		return nil, err
+	}
+	if result.Err != nil {
+		return errorResult(result.Err), nil
+	}
+	return &sdk.CallToolResult{
+		Content:           []sdk.Content{&sdk.TextContent{Text: result.Text}},
+		StructuredContent: result.Structured,
+	}, nil
+}
+
+// Call runs a tool by name outside the protocol, which is how the command line
+// offers a single tool call without an MCP client in the way.
+func (s *Server) Call(ctx context.Context, name string, arguments map[string]any) (*api.Result, error) {
+	for _, tool := range s.tools {
+		if tool.Name == name {
+			return s.invoke(ctx, tool, arguments)
+		}
+	}
+	return nil, fmt.Errorf("no tool named %q, run 'tools' to see the list", name)
+}
+
+// invoke runs one tool against the cluster its arguments select.
+func (s *Server) invoke(ctx context.Context, tool api.Tool, arguments map[string]any) (*api.Result, error) {
+	started := time.Now()
 
 	if s.config.ToolTimeout > 0 {
 		var cancel context.CancelFunc
@@ -147,7 +173,7 @@ func (s *Server) call(ctx context.Context, tool api.Tool, request *sdk.CallToolR
 
 	client, err := s.config.Provider.Client(cluster)
 	if err != nil {
-		return errorResult(err), nil
+		return api.Error(err), nil
 	}
 
 	result, err := tool.Handler(api.Params{
@@ -169,15 +195,12 @@ func (s *Server) call(ctx context.Context, tool api.Tool, request *sdk.CallToolR
 	if result.Err != nil {
 		s.config.Logger.Warn("tool reported an error",
 			"tool", tool.Name, "cluster", client.Target(), "duration", duration, "error", result.Err)
-		return errorResult(result.Err), nil
+		return result, nil
 	}
 
 	s.config.Logger.Debug("tool completed",
 		"tool", tool.Name, "cluster", client.Target(), "duration", duration)
-	return &sdk.CallToolResult{
-		Content:           []sdk.Content{&sdk.TextContent{Text: result.Text}},
-		StructuredContent: result.Structured,
-	}, nil
+	return result, nil
 }
 
 // ServeStdio runs the server over stdin and stdout, which is how editors and
