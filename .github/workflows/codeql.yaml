@@ -23,6 +23,9 @@ jobs:
     name: Analyze
     runs-on: ubuntu-latest
     permissions:
+      # A job level block replaces the workflow level one rather than adding to
+      # it, so contents has to be repeated here or checkout runs unauthenticated.
+      contents: read
       security-events: write
       actions: read
     steps:
