@@ -12,6 +12,12 @@ on:
 permissions:
   contents: read
 
+# Two runs for one commit both try to upload SARIF for the same category and
+# the loser fails, which looks like a scan failure rather than a duplicate.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   analyze:
     name: Analyze

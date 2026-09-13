@@ -3,7 +3,15 @@ name: CI
 on:
   push:
     branches: [main]
+    # Prose cannot break the build, and the badge still reflects the last
+    # commit that touched code.
+    paths-ignore: &docs
+      - "**.md"
+      - "docs/**"
+      - "LICENSE"
+      - ".github/ISSUE_TEMPLATE/**"
   pull_request:
+    paths-ignore: *docs
   workflow_dispatch:
 
 permissions:
@@ -68,7 +76,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          # The race detector roughly triples the run, so it guards Linux,
+          # which is what the container image and most deployments run. The
+          # other platforms are here to catch path and filesystem assumptions,
+          # which a plain run finds just as well.
+          - os: ubuntu-latest
+            flags: -race -coverprofile=coverage.out -covermode=atomic
+          - os: macos-latest
+            flags: ""
+          - os: windows-latest
+            flags: ""
     steps:
       - uses: actions/checkout@v7
 
@@ -77,14 +95,11 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
-      - name: Vet
-        run: go vet ./...
-        shell: bash
-
       - name: Test
         # PowerShell mangles the -coverprofile=coverage.out argument, so pin
-        # every runner to bash for consistency.
-        run: go test -race -count=1 -coverprofile=coverage.out -covermode=atomic ./...
+        # every runner to bash for consistency. go vet is not run here: the
+        # lint job's standard linter set already includes it.
+        run: go test -count=1 ${{ matrix.flags }} ./...
         shell: bash
 
       - name: Upload coverage
