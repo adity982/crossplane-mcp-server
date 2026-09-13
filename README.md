@@ -4,7 +4,7 @@
 [![Release](https://github.com/ravibagri5/crossplane-mcp-server/actions/workflows/release.yaml/badge.svg)](https://github.com/ravibagri5/crossplane-mcp-server/actions/workflows/release.yaml)
 [![CodeQL](https://github.com/ravibagri5/crossplane-mcp-server/actions/workflows/codeql.yaml/badge.svg)](https://github.com/ravibagri5/crossplane-mcp-server/actions/workflows/codeql.yaml)
 [![GitHub release](https://img.shields.io/github/v/release/ravibagri5/crossplane-mcp-server?sort=semver)](https://github.com/ravibagri5/crossplane-mcp-server/releases/latest)
-[![Go Report Card](https://goreportcard.com/badge/github.com/ravibagri5/crossplane-mcp-server)](https://goreportcard.com/report/github.com/ravibagri5/crossplane-mcp-server)
+[![golangci-lint](https://img.shields.io/badge/lint-golangci--lint-00ADD8?logo=go&logoColor=white)](https://golangci-lint.run/)
 [![Go version](https://img.shields.io/github/go-mod/go-version/ravibagri5/crossplane-mcp-server)](go.mod)
 [![Crossplane](https://img.shields.io/badge/crossplane-v1%20%7C%20v2-%23f2a72c)](https://crossplane.io)
 [![Downloads](https://img.shields.io/github/downloads/ravibagri5/crossplane-mcp-server/total)](https://github.com/ravibagri5/crossplane-mcp-server/releases)
