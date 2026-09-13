@@ -36,6 +36,9 @@ mkdir -p "$STAGE_DIR"
 TOOLS_JSON="$STAGE_DIR/tools.json"
 go run "./cmd/$BINARY" tools --json > "$TOOLS_JSON"
 
+PROMPTS_JSON="$STAGE_DIR/prompts.json"
+go run "./cmd/$BINARY" prompts --json > "$PROMPTS_JSON"
+
 for target in $MCPB_PLATFORMS; do
 	goos="${target%/*}"
 	goarch="${target#*/}"
@@ -64,6 +67,7 @@ for target in $MCPB_PLATFORMS; do
 	MCPB_ENTRY_POINT="$entry_point" \
 	MCPB_STAGE="$stage" \
 	MCPB_TOOLS="$TOOLS_JSON" \
+	MCPB_PROMPTS="$PROMPTS_JSON" \
 	python3 -c '
 import json, os
 
@@ -72,6 +76,9 @@ with open("manifest.json") as f:
 
 with open(os.environ["MCPB_TOOLS"]) as f:
     m["tools"] = json.load(f)
+
+with open(os.environ["MCPB_PROMPTS"]) as f:
+    m["prompts"] = json.load(f)
 
 m["version"] = os.environ["MANIFEST_VERSION"]
 m["server"]["entry_point"] = os.environ["MCPB_ENTRY_POINT"]

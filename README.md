@@ -1,8 +1,11 @@
 # crossplane-mcp-server
 
 [![CI](https://github.com/ravibagri5/crossplane-mcp-server/actions/workflows/ci.yaml/badge.svg)](https://github.com/ravibagri5/crossplane-mcp-server/actions/workflows/ci.yaml)
+[![GitHub release](https://img.shields.io/github/v/release/ravibagri5/crossplane-mcp-server?sort=semver)](https://github.com/ravibagri5/crossplane-mcp-server/releases/latest)
 [![Go Reference](https://pkg.go.dev/badge/github.com/ravibagri5/crossplane-mcp-server.svg)](https://pkg.go.dev/github.com/ravibagri5/crossplane-mcp-server)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ravibagri5/crossplane-mcp-server)](https://goreportcard.com/report/github.com/ravibagri5/crossplane-mcp-server)
 [![Go version](https://img.shields.io/github/go-mod/go-version/ravibagri5/crossplane-mcp-server)](go.mod)
+[![Downloads](https://img.shields.io/github/downloads/ravibagri5/crossplane-mcp-server/total)](https://github.com/ravibagri5/crossplane-mcp-server/releases)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![smithery badge](https://smithery.ai/badge/ravibagri5/crossplane-mcp-server)](https://smithery.ai/servers/ravibagri5/crossplane-mcp-server)
 
@@ -16,19 +19,23 @@ every failure, instead of guessing.
 ```text
 > Why is the app-db claim not ready?
 
-  crossplane_resource_tree(kind="PostgreSQLInstance", name="app-db")
+  crossplane_diagnose(kind="PostgreSQLInstance", name="app-db")
 
-  PostgreSQLInstance/app-db  READY=False SYNCED=True
-  └─ XPostgreSQLInstance/app-db-x7k2p  READY=False SYNCED=True
-     ├─ Instance/app-db-rds  READY=False SYNCED=False  create failed: InvalidParameterValue
-     └─ SecurityGroup/app-db-sg  READY=True SYNCED=True
+  PostgreSQLInstance app-db is NOT READY.
 
-  The RDS Instance app-db-rds is failing. Let me look at its events.
+  Verdict: Instance/app-db-rds is the deepest failure: InvalidParameterValue:
+  the instance class db.t2.mega does not exist
 
-  crossplane_resource_events(kind="Instance", name="app-db-rds")
+  Root causes (deepest failing resources):
+  KIND       NAME          READY   SYNCED   REASON          DETAIL
+  Instance   app-db-rds    False   False    ApplyFailure    InvalidParameterValue...
 
-  The instance class db.t2.mega does not exist. Fix the instanceClass field in
-  your Composition and the claim will reconcile.
+  Control plane checks:
+  CHECK         STATE   DETAIL
+  composition   OK      Composition "postgres-aws" exists.
+  providers     OK      all 3 provider(s) are Installed and Healthy
+
+  Fix the instanceClass field in your Composition and the claim will reconcile.
 ```
 
 Every tool is **read-only**. This server cannot create, update or delete
@@ -36,11 +43,12 @@ anything on your control plane.
 
 ## Contents
 
-- [Why](#why)
+- [Why not a generic Kubernetes MCP server?](#why-not-a-generic-kubernetes-mcp-server)
 - [Quick start](#quick-start)
 - [Installation](#installation)
 - [Client configuration](#client-configuration)
 - [Tools](#tools)
+- [Prompts](#prompts)
 - [Configuration](#configuration)
 - [Multiple control planes](#multiple-control-planes)
 - [Running in a cluster](#running-in-a-cluster)
@@ -49,15 +57,33 @@ anything on your control plane.
 - [Security](#security)
 - [License](#license)
 
-## Why
+## Why not a generic Kubernetes MCP server?
 
-A general purpose Kubernetes MCP server can list the objects on a Crossplane
-control plane, but it does not know what they mean. It cannot tell you that a
-`Bucket` is a managed resource, that `Synced=False` points at your composition
-rather than at AWS, or that a claim's real problem is three levels down the
-composition tree.
+A general purpose Kubernetes MCP server can already reach every object on a
+Crossplane control plane: Crossplane resources are Kubernetes resources, and a
+generic `resources_list` with an `apiVersion` and a `kind` will happily return
+your XRDs. Access was never the problem.
 
-This server encodes that knowledge:
+The problem is that it does not know what any of it **means**, and it will
+happily delete it.
+
+| | Generic Kubernetes MCP | This server |
+| --- | --- | --- |
+| Reach Crossplane CRDs | Yes | Yes |
+| Follow a claim to the infrastructure it created | No. It returns objects; the model has to guess which field to follow at each hop | `crossplane_resource_tree` walks `resourceRefs` for you |
+| Say which resource is actually at fault | No | `crossplane_diagnose` finds the deepest failure, not the symptom at the top |
+| Notice infrastructure changed outside Crossplane | No. It can return `spec` and `status` but has no idea they are meant to match | `crossplane_drift_detect` diffs desired against observed |
+| Explain why a delete is hanging | No | `crossplane_deleting_resources` names the Usage, finalizer or provider holding it |
+| Say what a delete would destroy first | No | `crossplane_impact` reports the blast radius before you act |
+| Simulate a change without touching the cluster | No | `crossplane_composition_render` runs the function pipeline offline |
+| Write to your cluster | Yes: create, update, delete, exec | **Never.** There is no code path that mutates anything |
+
+That last row matters more here than it does for ordinary Kubernetes work. On a
+Crossplane control plane a deleted object is not a pod that a ReplicaSet will
+recreate, it is a production database. A tool surface that cannot mutate is one
+you can point at your production control plane without a change review.
+
+Underneath, the Crossplane knowledge this server encodes is:
 
 - It discovers resources by Crossplane **category** (`managed`, `composite`,
   `claim`), so it works with every provider without being taught about any of
@@ -66,6 +92,8 @@ This server encodes that knowledge:
   and explains the difference to the model.
 - It walks `resourceRefs` to build the composition tree, the same view as
   `crossplane beta trace`.
+- It knows that drift on a paused or `Observe`-only resource is never corrected,
+  which is the difference between a warning and a non-event.
 - It supports both Crossplane v1 and v2 layouts, including namespaced composite
   resources and the `spec.crossplane` reference location.
 
@@ -216,6 +244,8 @@ Managed resources, composite resources and claims.
 | `crossplane_resource_get` | Everything about one resource: conditions, external name, events, manifest |
 | `crossplane_resource_tree` | The composition tree below a claim or composite, with per-resource status |
 | `crossplane_resource_events` | The events Crossplane recorded against one resource |
+| `crossplane_diagnose` | Why a resource is not Ready, and which resource is actually at fault |
+| `crossplane_drift_detect` | Which infrastructure no longer matches its declared spec, and whether that will be corrected |
 
 ### `packages`
 
@@ -257,6 +287,7 @@ How the control plane itself is configured.
 | `crossplane_unhealthy_resources` | Everything that is currently failing, and why |
 | `crossplane_deleting_resources` | What is stuck deleting, and what is holding it up |
 | `crossplane_usages_list` | What is protected from deletion, and what needs it |
+| `crossplane_impact` | What a deletion would destroy, and whether it would be blocked |
 | `crossplane_api_resources` | The Crossplane API surface, to find exact kinds and groups |
 
 Expose a subset with `--toolsets`:
@@ -264,6 +295,22 @@ Expose a subset with `--toolsets`:
 ```shell
 crossplane-mcp-server --toolsets diagnostics,packages
 ```
+
+## Prompts
+
+Tools tell a model what it *can* do. Prompts tell it the order an experienced
+operator would do things in, so it does not have to rediscover on every
+conversation that diagnosing a claim starts at the claim and not at the managed
+resource that looks angriest.
+
+Most clients surface these as slash commands or a prompt picker.
+
+| Prompt | What it does |
+| --- | --- |
+| `diagnose_resource` | Walks a failing resource down to the provider error and proposes the fix |
+| `control_plane_review` | Produces a health report ordered by what needs attention first |
+| `explain_platform_api` | Explains what a platform API offers and how to ask for one |
+| `assess_deletion` | Works out the blast radius of a deletion before anyone runs it |
 
 ## Configuration
 

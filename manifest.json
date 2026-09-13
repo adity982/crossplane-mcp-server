@@ -31,6 +31,7 @@
   "tools_generated": false,
   "tools": [],
   "prompts_generated": false,
+  "prompts": [],
   "keywords": [
     "crossplane",
     "kubernetes",

@@ -80,6 +80,7 @@ func NewServer(config Config) (*Server, error) {
 		}
 	}
 	config.Logger.Info("registered tools", "tools", len(s.tools), "toolsets", len(config.Toolsets))
+	s.registerPrompts()
 	return s, nil
 }
 

@@ -106,6 +106,7 @@ anything on the control plane.`,
 	flags.BoolVar(&opts.showVersion, "version", false, "Print the version and exit.")
 
 	cmd.AddCommand(newToolsCommand())
+	cmd.AddCommand(newPromptsCommand())
 	return cmd
 }
 
@@ -242,6 +243,47 @@ func writeToolsJSON(w io.Writer) error {
 	encoder := json.NewEncoder(w)
 	encoder.SetIndent("", "  ")
 	return encoder.Encode(declarations)
+}
+
+func newPromptsCommand() *cobra.Command {
+	var asJSON bool
+
+	cmd := &cobra.Command{
+		Use:   "prompts",
+		Short: "List the guided workflows this server offers",
+		Long: "Print the prompts this build exposes without connecting to a cluster. Prompts describe the " +
+			"order an experienced operator would call the tools in.",
+		Args:          cobra.NoArgs,
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			declarations := mcp.PromptDeclarations()
+			if asJSON {
+				encoder := json.NewEncoder(cmd.OutOrStdout())
+				encoder.SetIndent("", "  ")
+				return encoder.Encode(declarations)
+			}
+
+			var out strings.Builder
+			for _, prompt := range declarations {
+				fmt.Fprintf(&out, "%-24s %s\n", prompt.Name, prompt.Description)
+				for _, arg := range prompt.Arguments {
+					required := "optional"
+					if arg.Required {
+						required = "required"
+					}
+					fmt.Fprintf(&out, "  %-12s %-8s %s\n", arg.Name, required, arg.Description)
+				}
+				out.WriteString("\n")
+			}
+			_, err := io.WriteString(cmd.OutOrStdout(), out.String())
+			return err
+		},
+	}
+
+	cmd.Flags().BoolVar(&asJSON, "json", false, "Print the full MCP prompt declarations.")
+
+	return cmd
 }
 
 // summarise reduces a tool description to its first sentence, which is all

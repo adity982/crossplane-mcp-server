@@ -23,10 +23,12 @@ func (t *Toolset) Description() string {
 
 // Tools implements api.Toolset.
 func (t *Toolset) Tools() []api.Tool {
-	tools := make([]api.Tool, 0, 8)
+	tools := make([]api.Tool, 0, 10)
 	tools = append(tools, managedResourceTools()...)
 	tools = append(tools, compositeResourceTools()...)
 	tools = append(tools, inspectionTools()...)
+	tools = append(tools, diagnosisTools()...)
+	tools = append(tools, driftTools()...)
 	return tools
 }
 
