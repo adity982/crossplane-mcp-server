@@ -76,7 +76,7 @@ func impact(p api.Params) (*api.Result, error) {
 	}
 
 	tree := p.Client.Tree(p, obj)
-	wouldDelete := collectDoomed(tree, nil, true)
+	wouldDelete := collectDoomed(tree, nil)
 
 	external := 0
 	for _, d := range wouldDelete {
@@ -106,16 +106,20 @@ func impact(p api.Params) (*api.Result, error) {
 
 // collectDoomed flattens the composition tree. Everything below the root goes
 // when the root goes, and the root itself goes too.
-func collectDoomed(node crossplane.TreeNode, acc []doomed, isRoot bool) []doomed {
+//
+// A leaf is a managed resource: composites and claims always reference
+// something below them, so anything with no children is what actually holds
+// the external infrastructure.
+func collectDoomed(node crossplane.TreeNode, acc []doomed) []doomed {
 	acc = append(acc, doomed{
 		Kind:       node.Kind,
 		Name:       node.Name,
 		Namespace:  node.Namespace,
 		APIVersion: node.APIVersion,
-		Managed:    !isRoot && len(node.Children) == 0,
+		Managed:    len(node.Children) == 0,
 	})
 	for _, child := range node.Children {
-		acc = collectDoomed(child, acc, false)
+		acc = collectDoomed(child, acc)
 	}
 	return acc
 }
