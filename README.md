@@ -1,13 +1,14 @@
 # crossplane-mcp-server
 
 [![CI](https://github.com/ravibagri5/crossplane-mcp-server/actions/workflows/ci.yaml/badge.svg)](https://github.com/ravibagri5/crossplane-mcp-server/actions/workflows/ci.yaml)
+[![Release](https://github.com/ravibagri5/crossplane-mcp-server/actions/workflows/release.yaml/badge.svg)](https://github.com/ravibagri5/crossplane-mcp-server/actions/workflows/release.yaml)
+[![CodeQL](https://github.com/ravibagri5/crossplane-mcp-server/actions/workflows/codeql.yaml/badge.svg)](https://github.com/ravibagri5/crossplane-mcp-server/actions/workflows/codeql.yaml)
 [![GitHub release](https://img.shields.io/github/v/release/ravibagri5/crossplane-mcp-server?sort=semver)](https://github.com/ravibagri5/crossplane-mcp-server/releases/latest)
-[![Go Reference](https://pkg.go.dev/badge/github.com/ravibagri5/crossplane-mcp-server.svg)](https://pkg.go.dev/github.com/ravibagri5/crossplane-mcp-server)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ravibagri5/crossplane-mcp-server)](https://goreportcard.com/report/github.com/ravibagri5/crossplane-mcp-server)
 [![Go version](https://img.shields.io/github/go-mod/go-version/ravibagri5/crossplane-mcp-server)](go.mod)
+[![Crossplane](https://img.shields.io/badge/crossplane-v1%20%7C%20v2-%23f2a72c)](https://crossplane.io)
 [![Downloads](https://img.shields.io/github/downloads/ravibagri5/crossplane-mcp-server/total)](https://github.com/ravibagri5/crossplane-mcp-server/releases)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![smithery badge](https://smithery.ai/badge/ravibagri5/crossplane-mcp-server)](https://smithery.ai/servers/ravibagri5/crossplane-mcp-server)
 
 A [Model Context Protocol](https://modelcontextprotocol.io) server that lets AI
 assistants understand a [Crossplane](https://crossplane.io) control plane.
@@ -152,6 +153,18 @@ cd crossplane-mcp-server
 make build
 ./bin/crossplane-mcp-server tools
 ```
+
+### Registries
+
+This server is listed in:
+
+- [Official MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.ravibagri5/crossplane-mcp-server)
+  as `io.github.ravibagri5/crossplane-mcp-server`, which is where MCP clients
+  look it up.
+- [Smithery](https://smithery.ai/servers/ravibagri5/crossplane-mcp-server), which
+  also offers one-click installation into a client.
+- [pkg.go.dev](https://pkg.go.dev/github.com/ravibagri5/crossplane-mcp-server)
+  for the Go package documentation.
 
 ## Client configuration
 
