@@ -111,7 +111,7 @@ func diagnose(p api.Params) (*api.Result, error) {
 // below it failed, so the node the user asked about is the least interesting
 // one in the tree. The leaves of the failure are the answer.
 func deepestUnready(node crossplane.TreeNode) []crossplane.TreeNode {
-	var below []crossplane.TreeNode
+	below := make([]crossplane.TreeNode, 0, len(node.Children))
 	for _, child := range node.Children {
 		below = append(below, deepestUnready(child)...)
 	}

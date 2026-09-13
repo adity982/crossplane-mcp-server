@@ -96,7 +96,7 @@ func impact(p api.Params) (*api.Result, error) {
 	// Usages are best effort: a control plane without the protection API still
 	// deserves the tree half of the answer.
 	if usages, err := p.Client.Usages(p); err == nil {
-		report.BlockedBy, report.Dangling = classifyUsages(usages, wouldDelete, obj.GetKind(), obj.GetNamespace(), obj.GetName())
+		report.BlockedBy, report.Dangling = classifyUsages(usages, wouldDelete, obj.GetKind(), obj.GetName())
 	}
 	report.Blocked = len(report.BlockedBy) > 0
 	report.Verdict = impactVerdict(report)
@@ -126,7 +126,7 @@ func collectDoomed(node crossplane.TreeNode, acc []doomed) []doomed {
 
 // classifyUsages splits usages into the ones that would block this delete and
 // the ones that would be left pointing at something that no longer exists.
-func classifyUsages(usages []crossplane.Usage, wouldDelete []doomed, kind, namespace, name string) (blocking, dangling []crossplane.Usage) {
+func classifyUsages(usages []crossplane.Usage, wouldDelete []doomed, kind, name string) (blocking, dangling []crossplane.Usage) {
 	doomedKeys := make(map[string]bool, len(wouldDelete))
 	for _, d := range wouldDelete {
 		doomedKeys[usageKey(d.Kind, d.Name)] = true

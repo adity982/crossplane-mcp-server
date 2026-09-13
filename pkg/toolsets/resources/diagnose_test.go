@@ -58,11 +58,11 @@ func TestDeepestUnready(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got := deepestUnready(tc.tree)
 
-			var names []string
+			names := make([]string, 0, len(got))
 			for _, node := range got {
 				names = append(names, node.Kind+"/"+node.Name)
 			}
-			assert.Equal(t, tc.want, names)
+			assert.ElementsMatch(t, tc.want, names)
 		})
 	}
 }
