@@ -1,0 +1,39 @@
+labels: ["show and tell"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Show what you built, or what the server told you that you did not know.
+        Real transcripts from real control planes are the single most useful
+        input we get: they show us which tool descriptions the model misreads.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What did you do?
+      description: A workflow, an integration, a prompt that works well, a demo.
+    validations:
+      required: true
+
+  - type: textarea
+    id: transcript
+    attributes:
+      label: Transcript or output
+      description: >
+        The conversation, or the tool calls the assistant made. Please redact
+        anything sensitive.
+      render: shell
+
+  - type: input
+    id: client
+    attributes:
+      label: MCP client
+      placeholder: Claude Desktop, VS Code, Cursor, MCP Inspector, custom
+
+  - type: textarea
+    id: rough-edges
+    attributes:
+      label: What was awkward?
+      description: >
+        Anywhere the model needed a hint from you is somewhere our tool
+        descriptions are not doing their job.

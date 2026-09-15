@@ -1,0 +1,259 @@
+# Label catalogue.
+#
+# This file is the source of truth. Edit it in a pull request; the labels
+# workflow applies it to the repository when it merges to develop. Labels
+# created by hand in the UI will be removed.
+#
+# Colours are quoted because YAML reads unquoted hex as a number: 5319e7 is
+# scientific notation and 008672 is an octal-looking float.
+#
+# Colour convention:
+#   d73a4a red      type: bug
+#   0e8a16 green    type: everything else
+#   1d76db blue     area
+#   5319e7 purple   theme (matches the roadmap themes)
+#   b60205 crimson  priority and blockers
+#   fbca04 yellow   status, needs something from someone
+#   c5def5 pale     meta, size, community
+
+# --- Type -------------------------------------------------------------------
+
+- name: bug
+  color: "d73a4a"
+  description: Something does not work the way it should
+
+- name: regression
+  color: "d73a4a"
+  description: Worked in an earlier release and no longer does
+
+- name: enhancement
+  color: "0e8a16"
+  description: A new capability or an improvement to an existing one
+
+- name: proposal
+  color: "0e8a16"
+  description: Needs a design agreed before it is built
+
+- name: documentation
+  color: "0e8a16"
+  description: Docs, README, or a tool description the model misreads
+
+- name: refactor
+  color: "0e8a16"
+  description: Internal change with no user-visible behaviour
+
+- name: test
+  color: "0e8a16"
+  description: Test coverage or test infrastructure
+
+- name: chore
+  color: "0e8a16"
+  description: Build, tooling, CI or repository maintenance
+
+- name: dependencies
+  color: "0e8a16"
+  description: Dependency updates
+
+- name: release
+  color: "0e8a16"
+  description: Release coordination
+
+# --- Area -------------------------------------------------------------------
+#
+# One label per package, so triage does not need a judgement call.
+
+- name: "area/resources"
+  color: "1d76db"
+  description: "pkg/toolsets/resources: managed, composite and claim tools"
+
+- name: "area/compositions"
+  color: "1d76db"
+  description: "pkg/toolsets/compositions: XRDs, Compositions, schema, render"
+
+- name: "area/packages"
+  color: "1d76db"
+  description: "pkg/toolsets/packages: providers, functions, configurations"
+
+- name: "area/diagnostics"
+  color: "1d76db"
+  description: "pkg/toolsets/diagnostics: status, health, usages, impact"
+
+- name: "area/config"
+  color: "1d76db"
+  description: "pkg/toolsets/config: EnvironmentConfigs, runtime configs, MRDs"
+
+- name: "area/crossplane"
+  color: "1d76db"
+  description: "pkg/crossplane: queries, conditions, trees, rendering"
+
+- name: "area/api"
+  color: "1d76db"
+  description: "pkg/api: tool contract, argument parsing, result rendering"
+
+- name: "area/mcp"
+  color: "1d76db"
+  description: "pkg/mcp: protocol, prompts, instructions, transports"
+
+- name: "area/kube"
+  color: "1d76db"
+  description: "pkg/kube: client, discovery, kubeconfig and RBAC"
+
+- name: "area/cli"
+  color: "1d76db"
+  description: "cmd and internal/cli: flags and the call subcommand"
+
+- name: "area/build"
+  color: "1d76db"
+  description: Makefile, GoReleaser, container images, packaging
+
+- name: "area/ci"
+  color: "1d76db"
+  description: GitHub Actions workflows
+
+# --- Theme (see ROADMAP.md) -------------------------------------------------
+
+- name: "theme/diagnose"
+  color: "5319e7"
+  description: Root cause and troubleshooting
+
+- name: "theme/advise"
+  color: "5319e7"
+  description: Best practices, audits and policy
+
+- name: "theme/secure"
+  color: "5319e7"
+  description: RBAC, secrets, provenance and scanning
+
+- name: "theme/act"
+  color: "5319e7"
+  description: Write capabilities and consent flows
+
+- name: "theme/scale"
+  color: "5319e7"
+  description: Fleets, performance, pagination and telemetry
+
+# --- Priority ---------------------------------------------------------------
+
+- name: "priority/critical"
+  color: "b60205"
+  description: Data loss, security issue, or the server is unusable
+
+- name: "priority/high"
+  color: "b60205"
+  description: Should be in the next release
+
+- name: "priority/medium"
+  color: "e99695"
+  description: Worth doing, not urgent
+
+- name: "priority/low"
+  color: "f9d0c4"
+  description: Nice to have
+
+# --- Status -----------------------------------------------------------------
+
+- name: "needs triage"
+  color: "fbca04"
+  description: Not yet looked at by a maintainer
+
+- name: "needs information"
+  color: "fbca04"
+  description: Waiting on the reporter; closed after 30 days of silence
+
+- name: "needs design"
+  color: "fbca04"
+  description: Agreed as a problem, but the solution is not settled
+
+- name: "needs reproduction"
+  color: "fbca04"
+  description: We cannot reproduce this yet
+
+- name: blocked
+  color: "b60205"
+  description: Waiting on an upstream change or another issue
+
+- name: "in progress"
+  color: "fbca04"
+  description: Somebody is actively working on this
+
+- name: stale
+  color: "fbca04"
+  description: No activity for a long time; will be closed
+
+# --- Community --------------------------------------------------------------
+
+- name: "good first issue"
+  color: "7057ff"
+  description: Scoped so a first contribution does not need deep knowledge
+
+- name: "help wanted"
+  color: "008672"
+  description: Ready for a contributor to pick up
+
+- name: question
+  color: "c5def5"
+  description: A question rather than a defect
+
+- name: idea
+  color: "c5def5"
+  description: Raised in Discussions, not yet an issue
+
+- name: "show and tell"
+  color: "c5def5"
+  description: Community workflow, prompt or integration
+
+- name: upstream
+  color: "c5def5"
+  description: The fix belongs in Crossplane, a provider, or the MCP SDK
+
+# --- Resolution -------------------------------------------------------------
+
+- name: duplicate
+  color: "cfd3d7"
+  description: Already tracked elsewhere
+
+- name: invalid
+  color: "cfd3d7"
+  description: Not a defect, or not enough to act on
+
+- name: wontfix
+  color: "cfd3d7"
+  description: Deliberately out of scope; see ROADMAP.md
+
+# --- Meta -------------------------------------------------------------------
+
+- name: "breaking change"
+  color: "b60205"
+  description: Changes a tool contract and will break existing prompts
+
+- name: security
+  color: "b60205"
+  description: Hardening work. Vulnerabilities go through private reporting
+
+- name: performance
+  color: "1d76db"
+  description: Latency, memory, or API server load
+
+- name: "crossplane/v1"
+  color: "c5def5"
+  description: Specific to Crossplane v1 layouts
+
+- name: "crossplane/v2"
+  color: "c5def5"
+  description: Specific to Crossplane v2 layouts
+
+- name: "size/xs"
+  color: "c5def5"
+  description: A few lines
+
+- name: "size/s"
+  color: "c5def5"
+  description: An hour or two
+
+- name: "size/m"
+  color: "c5def5"
+  description: A focused day
+
+- name: "size/l"
+  color: "c5def5"
+  description: Several days, probably needs a proposal

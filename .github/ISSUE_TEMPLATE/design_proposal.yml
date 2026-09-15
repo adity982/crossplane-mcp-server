@@ -1,0 +1,112 @@
+name: Design proposal
+description: Propose a change that needs agreement before it is built
+labels: ["proposal", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for anything that is hard to reverse: a new toolset, a change
+        to an existing tool's contract, a transport or configuration change,
+        and **anything that writes to a control plane**.
+
+        Proposals are discussed and merged as a document before code is
+        written. If the idea is not yet formed, start in
+        [Discussions](https://github.com/ravibagri5/crossplane-mcp-server/discussions/categories/ideas)
+        instead.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: >
+        What cannot be done today, and who is blocked by it? Include the
+        question a user asked their assistant that went unanswered.
+    validations:
+      required: true
+
+  - type: textarea
+    id: goals
+    attributes:
+      label: Goals and non-goals
+      description: Be explicit about what this deliberately does not do.
+      placeholder: |
+        Goals:
+        - Explain why a managed resource is not syncing, including credentials
+
+        Non-goals:
+        - Fixing the credentials
+        - Anything provider-specific
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: >
+        Tool names, arguments, result shape, and which toolset it belongs to.
+        Sketch the tool description too: it is the API the model sees.
+    validations:
+      required: true
+
+  - type: textarea
+    id: principles
+    attributes:
+      label: How does this fit the project principles?
+      description: >
+        See the guiding principles in
+        [ROADMAP.md](https://github.com/ravibagri5/crossplane-mcp-server/blob/main/ROADMAP.md#guiding-principles)
+        and [GOVERNANCE.md](https://github.com/ravibagri5/crossplane-mcp-server/blob/main/GOVERNANCE.md).
+    validations:
+      required: true
+
+  - type: dropdown
+    id: write-tier
+    attributes:
+      label: Does this mutate a control plane?
+      options:
+        - "No — read-only"
+        - "Tier 1 — annotate, pause, resume (reversible)"
+        - "Tier 2 — create or update objects"
+        - "Tier 3 — delete objects or uninstall packages"
+    validations:
+      required: true
+
+  - type: textarea
+    id: safety
+    attributes:
+      label: Safety, permissions and blast radius
+      description: >
+        Required RBAC, worst case if the model calls this on the wrong object,
+        how a human consents, how it is audited, and how it is undone. Required
+        for anything above tier 0.
+
+  - type: textarea
+    id: scale
+    attributes:
+      label: Behaviour at scale
+      description: >
+        How many API calls does this make on a control plane with 50,000
+        managed resources, and how is the result kept inside a model's context
+        window?
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Including doing nothing, and telling people to use kubectl.
+
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility and migration
+      description: >
+        Does this rename or change an existing tool? That breaks every user's
+        prompts. Describe the deprecation path.
+
+  - type: checkboxes
+    id: commitment
+    attributes:
+      label: Implementation
+      options:
+        - label: I intend to implement this if the proposal is accepted

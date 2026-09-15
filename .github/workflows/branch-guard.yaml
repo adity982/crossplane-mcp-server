@@ -1,0 +1,79 @@
+name: Branch guard
+
+# main only accepts release and hotfix branches. Everything else goes to
+# develop, so that no change reaches a user without having been in a release
+# candidate. See docs/branching.md.
+on:
+  pull_request_target:
+    # Not synchronize: a push cannot change the base branch, so re-running the
+    # guard on every commit would only repeat a verdict that already stands.
+    types: [opened, reopened, edited]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    name: Check base branch
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      # Deliberately no checkout: pull_request_target runs with a write token
+      # against the base repository, so fork code must never be executed here.
+      - uses: actions/github-script@v8
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const head = pr.head.ref;
+
+            // head.ref carries no owner prefix, so a fork branch named
+            // release/anything would otherwise pass. Release and hotfix
+            // branches only ever live on the upstream repository.
+            const sameRepo = pr.head.repo?.full_name === pr.base.repo.full_name;
+            const allowed = sameRepo && /^(release|hotfix)\//.test(head);
+
+            if (allowed) {
+              core.info(`${head} may target main.`);
+              return;
+            }
+
+            const marker = '<!-- branch-guard -->';
+            const { owner, repo } = context.repo;
+
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              { owner, repo, issue_number: pr.number, per_page: 100 },
+            );
+            const alreadyCommented = comments.some(c => (c.body ?? '').includes(marker));
+
+            if (!alreadyCommented) {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: pr.number,
+                body: [
+                  marker,
+                  `Thanks for this. Pull requests go to \`develop\`, not \`main\`.`,
+                  ``,
+                  `\`main\` only ever receives \`release/*\` and \`hotfix/*\` branches, so that`,
+                  `every change reaches users through a release candidate first.`,
+                  ``,
+                  `**Nothing is lost, and you do not need to reopen anything.** Click **Edit**`,
+                  `next to the title of this pull request and change the base branch from`,
+                  `\`main\` to \`develop\`. If GitHub then shows conflicts, rebase your branch:`,
+                  ``,
+                  '```shell',
+                  `git fetch upstream`,
+                  `git rebase upstream/develop`,
+                  `git push --force-with-lease`,
+                  '```',
+                  ``,
+                  `The full model is in [docs/branching.md](https://github.com/${owner}/${repo}/blob/main/docs/branching.md).`,
+                ].join('\n'),
+              });
+            }
+
+            core.setFailed(
+              `Base branch must be 'develop'. '${head}' is not a release or hotfix branch. ` +
+              `Edit this pull request and change the base branch.`,
+            );

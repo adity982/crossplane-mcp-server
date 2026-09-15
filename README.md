@@ -468,6 +468,19 @@ which covers the development workflow, how to add a tool, and the sign-off
 requirement. Good first issues are labelled
 [`good first issue`](https://github.com/ravibagri5/crossplane-mcp-server/labels/good%20first%20issue).
 
+Two things to know before you open a pull request:
+
+- Pull requests target `develop`, never `main`. `main` only receives `release/*`
+  and `hotfix/*` branches, so that every change ships through a release
+  candidate first. See [docs/branching.md](docs/branching.md).
+- Questions and half-formed ideas belong in
+  [Discussions](https://github.com/ravibagri5/crossplane-mcp-server/discussions),
+  not the issue tracker. A maintainer will open the issue once the shape is
+  agreed.
+
+Where the project is going, including write support, auditing and scanning, is
+in [ROADMAP.md](ROADMAP.md).
+
 This project follows the [Crossplane Code of Conduct](CODE_OF_CONDUCT.md) and is
 governed as described in [GOVERNANCE.md](GOVERNANCE.md).
 

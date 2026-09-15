@@ -1,0 +1,70 @@
+name: Release checklist
+description: Maintainers only — track a release through the branch flow
+title: "Release vX.Y.Z"
+labels: ["release"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Maintainers only. See
+        [docs/branching.md](https://github.com/ravibagri5/crossplane-mcp-server/blob/main/docs/branching.md)
+        for the branch and tag flow.
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: v0.5.0
+    validations:
+      required: true
+
+  - type: input
+    id: release-branch
+    attributes:
+      label: Release branch
+      placeholder: release/v0.5
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: stabilise
+    attributes:
+      label: Stabilise
+      options:
+        - label: Release branch cut from `develop`
+        - label: Milestone has no open blockers
+        - label: CHANGELOG Unreleased section moved under the version heading
+        - label: README tool table matches the registered tools
+        - label: Compatibility matrix checked against current Crossplane and Kubernetes
+
+  - type: checkboxes
+    id: prerelease
+    attributes:
+      label: Pre-release
+      options:
+        - label: Release candidate tagged from the release branch (`vX.Y.0-rc.1`)
+        - label: Binaries and container image verified from the candidate
+        - label: Smoke-tested against a Crossplane v1 control plane
+        - label: Smoke-tested against a Crossplane v2 control plane
+        - label: Smoke-tested in at least two MCP clients
+        - label: Soak period elapsed with no new blockers
+
+  - type: checkboxes
+    id: release
+    attributes:
+      label: Release
+      options:
+        - label: Release branch merged into `main`
+        - label: Final tag pushed from `main` and GoReleaser succeeded
+        - label: Release notes reviewed, breaking changes called out first
+        - label: Container image and checksums published and signed
+        - label: Registry metadata (`server.json`, `manifest.json`, smithery) updated
+
+  - type: checkboxes
+    id: after
+    attributes:
+      label: After
+      options:
+        - label: "`main` merged back into `develop`"
+        - label: Milestone closed, unfinished items moved to the next milestone
+        - label: Release announced in Discussions

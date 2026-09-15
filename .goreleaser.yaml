@@ -67,7 +67,9 @@ signs:
 dockers:
   - image_templates:
       - ghcr.io/ravibagri5/crossplane-mcp-server:{{ .Version }}-amd64
-      - ghcr.io/ravibagri5/crossplane-mcp-server:latest-amd64
+      # Release candidates publish :rc, never :latest, so that pulling latest
+      # never lands somebody on a pre-release.
+      - ghcr.io/ravibagri5/crossplane-mcp-server:{{ if .Prerelease }}rc{{ else }}latest{{ end }}-amd64
     # GoReleaser's build context holds only the compiled binaries, so the
     # root Dockerfile, which builds from source, cannot be used here.
     dockerfile: Dockerfile.release
@@ -80,7 +82,7 @@ dockers:
       - --label=org.opencontainers.image.created={{ .Date }}
   - image_templates:
       - ghcr.io/ravibagri5/crossplane-mcp-server:{{ .Version }}-arm64
-      - ghcr.io/ravibagri5/crossplane-mcp-server:latest-arm64
+      - ghcr.io/ravibagri5/crossplane-mcp-server:{{ if .Prerelease }}rc{{ else }}latest{{ end }}-arm64
     dockerfile: Dockerfile.release
     use: buildx
     goarch: arm64
@@ -95,10 +97,10 @@ docker_manifests:
     image_templates:
       - ghcr.io/ravibagri5/crossplane-mcp-server:{{ .Version }}-amd64
       - ghcr.io/ravibagri5/crossplane-mcp-server:{{ .Version }}-arm64
-  - name_template: ghcr.io/ravibagri5/crossplane-mcp-server:latest
+  - name_template: ghcr.io/ravibagri5/crossplane-mcp-server:{{ if .Prerelease }}rc{{ else }}latest{{ end }}
     image_templates:
-      - ghcr.io/ravibagri5/crossplane-mcp-server:latest-amd64
-      - ghcr.io/ravibagri5/crossplane-mcp-server:latest-arm64
+      - ghcr.io/ravibagri5/crossplane-mcp-server:{{ if .Prerelease }}rc{{ else }}latest{{ end }}-amd64
+      - ghcr.io/ravibagri5/crossplane-mcp-server:{{ if .Prerelease }}rc{{ else }}latest{{ end }}-arm64
 
 # Homebrew publishing is not configured. To add it, create a
 # ravibagri5/homebrew-tap repository, give the release workflow a token with

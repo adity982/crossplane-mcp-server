@@ -42,11 +42,14 @@ body:
       label: Scope check
       options:
         - label: >
-            This does not require the server to create, update or delete anything.
-            (Write support needs a design proposal first, see GOVERNANCE.md.)
+            This does not require the server to create, update or delete
+            anything. (Write support is roadmapped under v0.8 and needs a design
+            proposal first, see GOVERNANCE.md.)
         - label: >
             This does not require hard-coded knowledge of a specific Crossplane
             provider.
+        - label: >
+            I have checked ROADMAP.md and this is not already planned.
 
   - type: checkboxes
     id: help

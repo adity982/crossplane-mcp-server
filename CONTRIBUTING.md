@@ -8,6 +8,8 @@ with contributions from people running real control planes.
 
 - [Code of Conduct](#code-of-conduct)
 - [Ways to contribute](#ways-to-contribute)
+- [Where to say what](#where-to-say-what)
+- [Branching](#branching)
 - [Development setup](#development-setup)
 - [Adding a tool](#adding-a-tool)
 - [Writing tool descriptions](#writing-tool-descriptions)
@@ -36,6 +38,45 @@ participating you are expected to uphold it.
 Before starting anything large, open an issue so we can agree on the shape of
 it first. Nobody enjoys having a pull request turned down after a weekend of
 work.
+
+## Where to say what
+
+| You have | Go to |
+| --- | --- |
+| A question about how something works | [Discussions → Q&A](https://github.com/ravibagri5/crossplane-mcp-server/discussions/categories/q-a) |
+| An idea that is not fully formed | [Discussions → Ideas](https://github.com/ravibagri5/crossplane-mcp-server/discussions/categories/ideas) |
+| A workflow, prompt or transcript to share | [Discussions → Show and tell](https://github.com/ravibagri5/crossplane-mcp-server/discussions/categories/show-and-tell) |
+| Something reproducibly broken | [Bug report](https://github.com/ravibagri5/crossplane-mcp-server/issues/new?template=bug_report.yml) |
+| A specific, scoped capability | [Feature request](https://github.com/ravibagri5/crossplane-mcp-server/issues/new?template=feature_request.yml) |
+| A large change, or anything that writes to a control plane | [Design proposal](https://github.com/ravibagri5/crossplane-mcp-server/issues/new?template=design_proposal.yml) |
+| Wrong, missing or confusing docs, including tool descriptions | [Documentation issue](https://github.com/ravibagri5/crossplane-mcp-server/issues/new?template=documentation.yml) |
+| A security vulnerability | [Private report](https://github.com/ravibagri5/crossplane-mcp-server/security/advisories/new), never a public issue |
+
+Discussions are for working out whether something is worth doing. Issues are
+for things we have agreed to do, or defects. A maintainer will convert a
+discussion into an issue when it is ready. How the categories, labels and
+triage work is described in [docs/community.md](docs/community.md).
+
+## Branching
+
+**Open your pull request against `develop`, not `main`.**
+
+`main` holds released code and only ever receives `release/*` and `hotfix/*`
+branches, so that nothing reaches a user without having been through a release
+candidate. A pull request that targets `main` is failed by the branch guard
+with instructions for retargeting it; you do not need to open a new one.
+
+```shell
+git fetch upstream
+git switch -c feat/provider-config-credentials upstream/develop
+```
+
+Name your branch `<type>/<short-description>`, where the type matches the one
+you will use in the pull request title. See [Commit messages and
+sign-off](#commit-messages-and-sign-off) for the types.
+
+The full model, including how releases are cut and how hotfixes work, is in
+[docs/branching.md](docs/branching.md).
 
 ## Development setup
 
@@ -201,16 +242,34 @@ make build
 
 ## Commit messages and sign-off
 
-Write commit messages in the imperative mood, with a short summary line and a
-body explaining why the change is needed:
+Write the summary line as a [Conventional
+Commit](https://www.conventionalcommits.org/): a type, an optional scope, and
+an imperative description. The release notes are grouped by these prefixes, so
+a commit without one lands under "Other".
 
 ```text
-Report Established on XRDs that do not publish Ready
+fix(compositions): report Established on XRDs that do not publish Ready
 
 Crossplane reports Established and Offered on an XRD rather than Ready, so
 the summary line showed "-" for every XRD. Fall back to Established when
 Ready is absent.
 ```
+
+The body matters more than the summary: explain why the change is needed, not
+what the diff does.
+
+Use `feat`, `fix`, `docs`, `chore`, `refactor`, `test`, `perf`, `build`, `ci`
+or `deps`, and scope it with the toolset or package you touched. Append `!`
+after the scope for a change to a tool contract, which breaks existing user
+prompts:
+
+```text
+feat(resources)!: rename crossplane_list_managed to crossplane_managed_resources_list
+```
+
+Because pull requests are squash-merged, the pull request title is the commit
+message that lands. Individual commits on your branch do not need to follow the
+convention, though it helps reviewers if they do.
 
 All commits must be signed off under the
 [Developer Certificate of Origin](https://developercertificate.org/):
@@ -221,9 +280,13 @@ git commit --signoff
 
 ## Pull requests
 
+- Target `develop`. See [Branching](#branching).
 - One logical change per pull request.
+- Give it a Conventional Commit title; it becomes the squashed commit message.
 - Add or update tests for behaviour you change.
 - Update the README tool table if you add or rename a tool.
+- Rebase on `upstream/develop` rather than merging it in, and push with
+  `--force-with-lease`.
 - CI must be green. It runs build, vet, lint and tests on Linux, macOS and
   Windows.
 
@@ -233,12 +296,18 @@ that we are ignoring it.
 
 ## Releases
 
-Maintainers cut releases by pushing a semver tag:
+Releases are cut from a `release/vX.Y` branch, published first as a release
+candidate (`vX.Y.0-rc.1`), soaked, then merged into `main` and tagged:
 
 ```shell
-git tag -s v0.4.0 -m "v0.4.0"
-git push origin v0.4.0
+git switch -c release/v0.5 develop
+git tag -s v0.5.0-rc.1 -m "v0.5.0-rc.1"
+git push origin release/v0.5 v0.5.0-rc.1
 ```
 
 GoReleaser builds the binaries, publishes the container image to GHCR and
-drafts the release notes from the commit log.
+drafts the release notes from the commit log. Pre-release tags are published as
+GitHub pre-releases and never become `latest`.
+
+The full procedure, including hotfixes and the versioning rules, is in
+[docs/branching.md](docs/branching.md).

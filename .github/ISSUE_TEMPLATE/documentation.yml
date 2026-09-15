@@ -1,0 +1,53 @@
+name: Documentation
+description: Something in the docs is wrong, missing or confusing
+labels: ["documentation", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This includes tool descriptions. A tool description that misleads a
+        model is a documentation bug with real consequences, and fixing one is
+        a genuine contribution.
+
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where is the problem?
+      options:
+        - README
+        - docs/tools.md
+        - docs/architecture.md
+        - CONTRIBUTING, GOVERNANCE or another community file
+        - A tool description returned by the server
+        - MCP client configuration instructions
+        - Somewhere else
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Link or tool name
+      placeholder: docs/tools.md#crossplane_diagnose, or crossplane_status
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong or missing?
+      description: >
+        If a model misread a tool description, paste what it did. That tells us
+        more than the sentence itself does.
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: What should it say instead?
+
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Would you like to fix it?
+      options:
+        - label: I am willing to open a pull request

@@ -1,0 +1,64 @@
+labels: ["idea"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ideas start here, not in the issue tracker. An idea becomes an issue
+        once we agree on the shape of it, which saves you writing a proposal
+        nobody wanted and saves us turning one down.
+
+        Before you write: the [roadmap](https://github.com/ravibagri5/crossplane-mcp-server/blob/main/ROADMAP.md)
+        may already cover this, and a comment on an existing item is more useful
+        than a new thread.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What could you not answer about your control plane?
+      description: >
+        Describe the question you asked your assistant, and what it did instead.
+        Problems make better ideas than solutions.
+      placeholder: |
+        I asked which of my Buckets would be deleted if I removed a claim. The
+        assistant listed the composed resources but could not tell which ones
+        had deletionPolicy Orphan, so it hedged.
+    validations:
+      required: true
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: What do you think we should do about it?
+      description: A rough sketch is fine. You do not need to design the tool.
+
+  - type: dropdown
+    id: theme
+    attributes:
+      label: Which theme does this belong to?
+      description: See the themes table in the roadmap.
+      options:
+        - Diagnose — root cause and troubleshooting
+        - Advise — best practices, audits, policy
+        - Secure — RBAC, secrets, provenance, scanning
+        - Act — write capabilities
+        - Scale — fleets, performance, telemetry
+        - Developer experience — docs, clients, packaging
+        - Something else
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: writes
+    attributes:
+      label: Does this need the server to change anything?
+      options:
+        - label: >
+            This is read-only. (Anything that creates, updates or deletes is
+            roadmapped under v0.8 and needs a design proposal.)
+
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Would you like to work on this?
+      options:
+        - label: I am willing to open a pull request once we agree on the shape

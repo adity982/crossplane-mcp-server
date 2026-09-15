@@ -1,0 +1,49 @@
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ask anything about running, configuring or extending the server. If it
+        turns out to be a bug, a maintainer will convert this into an issue, so
+        please do not file one first.
+
+        If this is a security question about a specific vulnerability, use
+        [private reporting](https://github.com/ravibagri5/crossplane-mcp-server/security/advisories/new)
+        instead.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: What are you trying to do?
+      description: >
+        Describe the outcome you want, not only the command that failed. It is
+        common that there is an easier route to the same answer.
+    validations:
+      required: true
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: What have you tried?
+      description: Tool calls, client configuration, docs you have already read.
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Relevant output
+      description: >
+        Tool results or server logs. `--log-level debug` gives more detail.
+        Please redact credentials, cluster endpoints and account identifiers.
+      render: shell
+
+  - type: input
+    id: server-version
+    attributes:
+      label: crossplane-mcp-server version
+      placeholder: v0.4.0
+
+  - type: input
+    id: environment
+    attributes:
+      label: Crossplane, Kubernetes and MCP client
+      placeholder: Crossplane v2.0.1, Kubernetes v1.31.4, VS Code 1.98
