@@ -8,11 +8,11 @@
     "url": "https://github.com/ravibagri5/crossplane-mcp-server",
     "source": "github"
   },
-  "version": "0.1.5",
+  "version": "0.2.0",
   "packages": [
     {
       "registryType": "oci",
-      "identifier": "ghcr.io/ravibagri5/crossplane-mcp-server:0.1.5",
+      "identifier": "ghcr.io/ravibagri5/crossplane-mcp-server:0.2.0",
       "transport": {
         "type": "stdio"
       },

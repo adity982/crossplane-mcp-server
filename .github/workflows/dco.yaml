@@ -22,13 +22,17 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           missing=0
+          # --no-merges: a merge commit introduces no authored change, and the
+          # ones GitHub writes when a pull request is merged carry no trailer,
+          # so without this every release/* -> main pull request fails on the
+          # merge commits it inherits from develop.
           while read -r sha; do
             author="$(git show -s --format='%an <%ae>' "$sha")"
             if ! git show -s --format=%B "$sha" | grep -qiF "Signed-off-by: $author"; then
               echo "::error::commit $sha is not signed off by $author"
               missing=1
             fi
-          done < <(git rev-list "$BASE_SHA..$HEAD_SHA")
+          done < <(git rev-list --no-merges "$BASE_SHA..$HEAD_SHA")
 
           if [ "$missing" -ne 0 ]; then
             echo "Sign off your commits with 'git commit --signoff'."
