@@ -1,0 +1,46 @@
+# RBAC for a server running with --read-only=false.
+#
+# Bind this in addition to the read-only ClusterRole, not instead of it. It
+# grants create and update on the platform APIs an assistant is meant to use,
+# and on nothing else: no Secrets, no RBAC, no Deployments, and no Provider or
+# Function packages, because installing a package runs somebody else's code in
+# your cluster.
+#
+# There is no `delete` verb here, and there is no tool that would use one. Keep
+# it that way: on a Crossplane control plane a deleted object is a production
+# database, not a pod that comes back.
+#
+# Replace the API groups below with the groups from your own XRDs. Granting
+# "*" here would undo the point of the exercise.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: crossplane-mcp-server-write
+rules:
+  # Your platform APIs: the composite resources and claims generated from your
+  # XRDs. This is what crossplane_database_create and crossplane_workload_create
+  # write to.
+  - apiGroups:
+      - platform.example.org
+      - demo.crossplane.io
+    resources: ["*"]
+    verbs: ["create", "update", "patch"]
+
+  # Optional: let the assistant author platform APIs as well as use them.
+  # Leave this out unless you want it writing XRDs and Compositions.
+  # - apiGroups: ["apiextensions.crossplane.io"]
+  #   resources: ["compositeresourcedefinitions", "compositions", "environmentconfigs"]
+  #   verbs: ["create", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: crossplane-mcp-server-write
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: crossplane-mcp-server-write
+subjects:
+  - kind: ServiceAccount
+    name: crossplane-mcp-server
+    namespace: crossplane-mcp-system

@@ -53,6 +53,60 @@ func TestNewServerRequiresAClient(t *testing.T) {
 	assert.Contains(t, err.Error(), "crossplane provider is required")
 }
 
+func TestWriteToolsAreWithheldUnlessAskedFor(t *testing.T) {
+	toolset := &testToolset{name: "test", tools: []api.Tool{
+		{
+			Name:        "crossplane_read",
+			Title:       "Read",
+			Description: "reads",
+			InputSchema: api.Object(nil),
+			Handler:     func(api.Params) (*api.Result, error) { return api.Text("ok"), nil },
+		},
+		{
+			Name:        "crossplane_write",
+			Title:       "Write",
+			Description: "writes",
+			InputSchema: api.Object(nil),
+			Write:       true,
+			Handler:     func(api.Params) (*api.Result, error) { return api.Text("written"), nil },
+		},
+	}}
+
+	t.Run("ReadOnly", func(t *testing.T) {
+		server, err := NewServer(Config{Provider: newFakeProvider(), Toolsets: []api.Toolset{toolset}})
+		require.NoError(t, err)
+
+		listed, err := connect(t, server).ListTools(context.Background(), nil)
+		require.NoError(t, err)
+		require.Len(t, listed.Tools, 1)
+		assert.Equal(t, "crossplane_read", listed.Tools[0].Name)
+
+		// The tool is not merely hidden, it cannot be reached at all.
+		_, err = server.Call(context.Background(), "crossplane_write", nil)
+		assert.ErrorContains(t, err, `no tool named "crossplane_write"`)
+	})
+
+	t.Run("WritesEnabled", func(t *testing.T) {
+		server, err := NewServer(Config{
+			Provider:   newFakeProvider(),
+			Toolsets:   []api.Toolset{toolset},
+			AllowWrite: true,
+		})
+		require.NoError(t, err)
+
+		listed, err := connect(t, server).ListTools(context.Background(), nil)
+		require.NoError(t, err)
+		require.Len(t, listed.Tools, 2)
+		for _, tool := range listed.Tools {
+			assert.Equal(t, tool.Name == "crossplane_read", tool.Annotations.ReadOnlyHint)
+		}
+
+		result, err := server.Call(context.Background(), "crossplane_write", nil)
+		require.NoError(t, err)
+		assert.Equal(t, "written", result.Text)
+	})
+}
+
 func TestServerExposesToolsOverTheProtocol(t *testing.T) {
 	server, err := NewServer(Config{
 		Provider: newFakeProvider(),

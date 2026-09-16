@@ -10,8 +10,28 @@ a tool, or making an optional argument required, is a breaking change.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-16
+
 ### Added
 
+- Opt-in write support. The new `provisioning` toolset creates a database or a
+  workload through the control plane's own platform APIs
+  (`crossplane_database_create`, `crossplane_workload_create`) and applies a
+  Crossplane manifest (`crossplane_resource_apply`). The create tools find the
+  claim or composite kind the control plane offers, read the schema from the
+  XRD that defines it and set only the fields it declares, reporting anything
+  with nowhere to go. Writes create and update only: no tool deletes, and there
+  is no delete call in the codebase.
+- `--read-only`, defaulting to `true`. The write tools are not registered at
+  all unless it is set to `false`, so a client does not see them and cannot
+  call them. Even with writes enabled the server refuses to touch anything that
+  is not a Crossplane kind, all writes are server-side applies under the field
+  manager `crossplane-mcp-server`, and every write tool takes `dryRun`.
+- `examples/demo`, a control plane built on provider-nop that provisions fake
+  databases and workloads, with a script for demonstrating the write tools
+  through goose. No cloud account needed.
+- `deploy/rbac-write.yaml`, a least-privilege ClusterRole for a server running
+  with writes enabled.
 - One server can now target several control planes. Every tool takes an
   optional `cluster` argument, `--clusters` chooses which kubeconfig contexts
   are exposed, and `crossplane_clusters_list` reports what is available.
@@ -32,6 +52,14 @@ a tool, or making an optional argument required, is a breaking change.
   needs it.
 - New `config` toolset covering EnvironmentConfigs, DeploymentRuntimeConfigs,
   ManagedResourceDefinitions and ManagedResourceActivationPolicies.
+
+### Changed
+
+- The global flags (`--kubeconfig`, `--context`, `--clusters`, `--namespace`,
+  `--toolsets`, `--read-only`, `--log-level`, `--tool-timeout`) are now
+  persistent, so `call`, `tools` and `prompts` accept them too. Previously they
+  were only accepted by the root command, which meant `call` always used the
+  current context.
 
 ### Fixed
 
@@ -70,5 +98,6 @@ First release. Everything below is new.
 - Requires Go 1.26 or newer to build from source, which `k8s.io/client-go`
   v0.37 depends on. The released binaries and container image are unaffected.
 
-[Unreleased]: https://github.com/ravibagri5/crossplane-mcp-server/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/ravibagri5/crossplane-mcp-server/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/ravibagri5/crossplane-mcp-server/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ravibagri5/crossplane-mcp-server/releases/tag/v0.1.0

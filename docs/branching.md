@@ -191,25 +191,55 @@ Configured on the repository; listed here so contributors know what to expect.
 
 **`main`**
 
-- Pull request required; direct pushes blocked, including for maintainers.
+- Pull request required; direct pushes blocked.
 - Base branch restricted to `release/*` and `hotfix/*` by the branch guard
-  workflow.
-- One maintainer approval, plus CODEOWNERS review.
-- Required checks: verify, lint, test on Linux, macOS and Windows, CodeQL, DCO.
-- Linear history, conversation resolution required, force pushes and deletion
-  blocked.
+  workflow, which runs as the `Check base branch` status check.
+- One approval required, plus CODEOWNERS review. Stale approvals are dismissed
+  when new commits land.
+- Required checks: `Check sign-off` (DCO) and `Check base branch`.
+- Branches must be up to date before merging.
+- Linear history and conversation resolution required; force pushes and
+  deletion blocked.
 
 **`develop`**
 
 - Pull request required; direct pushes blocked.
-- One maintainer approval.
-- Required checks: verify, lint, test, CodeQL, DCO.
-- Stale approvals dismissed on new commits.
-- Squash merge only.
+- One approval required, plus CODEOWNERS review. Stale approvals are dismissed
+  when new commits land.
+- Required check: `Check sign-off` (DCO).
+- Branches must be up to date before merging.
+- Conversation resolution required; force pushes and deletion blocked.
 
 **`release/*`**
 
 - Same as `develop`, plus: no new features, only fixes and release preparation.
+
+### Why CI is not a required check
+
+CI is path-filtered: `ci.yaml` carries `paths-ignore` for `**.md` and `docs/**`,
+so a documentation-only pull request skips it entirely. A skipped workflow never
+reports a status, and a required check that never reports blocks the merge
+button forever. Requiring CI would therefore make every docs pull request
+unmergeable.
+
+The DCO and branch guard workflows have no path filter, so they always report
+and are safe to require.
+
+CI still runs and is still visible on every pull request that touches code, and
+a red build is a blocker in review even though the button does not enforce it.
+To make CI genuinely required, `ci.yaml` would need an aggregating job that runs
+unconditionally and reports success when the path-filtered jobs are skipped.
+
+### A note on admin bypass
+
+`enforce_admins` is off, so maintainers can merge past these rules. That is a
+deliberate concession to the project having one maintainer: GitHub does not let
+anyone approve their own pull request, so a strict reading of "one approval"
+would make the repository unmergeable.
+
+Raise `required_approving_review_count` enforcement, and turn `enforce_admins`
+on, once there is a second maintainer. Until then, treat the bypass as
+something to be embarrassed about using, not a routine step.
 
 ## Frequently asked questions
 

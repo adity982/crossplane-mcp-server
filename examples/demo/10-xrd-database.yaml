@@ -1,0 +1,58 @@
+# A platform API for databases.
+#
+# This is what crossplane_database_create looks for: an XRD whose kind reads
+# like a database, with the user facing fields under spec.parameters. The tool
+# reads this schema and only sets fields it declares, so renaming or removing
+# one here changes what the tool submits without any change to the server.
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xpostgresqlinstances.demo.crossplane.io
+spec:
+  group: demo.crossplane.io
+  names:
+    kind: XPostgreSQLInstance
+    plural: xpostgresqlinstances
+  # Claims are the namespaced front door on Crossplane v1. On v2, drop this
+  # block and set `scope: Namespaced` instead.
+  claimNames:
+    kind: PostgreSQLInstance
+    plural: postgresqlinstances
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                parameters:
+                  type: object
+                  properties:
+                    engine:
+                      type: string
+                      enum: [postgresql, mysql, mariadb]
+                      default: postgresql
+                    version:
+                      type: string
+                      default: "16"
+                    size:
+                      type: string
+                      enum: [small, medium, large]
+                      default: small
+                    storageGB:
+                      type: integer
+                      default: 10
+                  required:
+                    - size
+              required:
+                - parameters
+            status:
+              type: object
+              properties:
+                host:
+                  type: string
+                  description: Where the database can be reached.

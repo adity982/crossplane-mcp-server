@@ -1,9 +1,22 @@
 package mcp
 
+import "strings"
+
 // instructions are sent to the client during initialisation. They are the one
 // chance we get to teach a model how a Crossplane control plane is put
 // together, before it starts guessing which tool to call.
-const instructions = `This server gives read-only access to a Crossplane control plane.
+//
+// What the server will let the model do changes with the mode it was started
+// in, so the closing paragraph changes with it. Telling a model it can create
+// resources when those tools are withheld only produces confident failures.
+func instructions(allowWrite bool) string {
+	if allowWrite {
+		return strings.Join([]string{background, readingGuide, writingGuide}, "\n\n")
+	}
+	return strings.Join([]string{background, readingGuide, readOnlyNote}, "\n\n")
+}
+
+const background = `This server exposes a Crossplane control plane.
 
 Crossplane in one paragraph: a control plane is a Kubernetes cluster with
 Crossplane installed. Providers add managed resources, which are Kubernetes
@@ -19,9 +32,9 @@ How to read status: nearly every Crossplane object publishes a Ready condition
 Crossplane manage to reconcile its desired state?). Packages publish Installed
 and Healthy instead. Synced=False almost always means a problem with the
 Crossplane configuration; Ready=False with Synced=True usually means the
-external system rejected or is still creating the resource.
+external system rejected or is still creating the resource.`
 
-Suggested approach:
+const readingGuide = `Suggested approach:
 - Start with crossplane_status for a general picture of the control plane.
 - For "what is broken?", call crossplane_unhealthy_resources.
 - For "why is this claim not ready?", call crossplane_resource_tree on the
@@ -31,7 +44,37 @@ Suggested approach:
 - If a kind is missing, check crossplane_providers_list: an unhealthy provider
   never installs its CRDs.
 - If you do not know the exact kind or API group to pass, call
-  crossplane_api_resources first rather than guessing.
+  crossplane_api_resources first rather than guessing.`
 
-Every tool here is read-only. This server cannot create, update or delete
-anything, so it is safe to explore.`
+const readOnlyNote = `Every tool here is read-only. This server cannot create or update anything, so
+it is safe to explore. If the user asks you to provision something, say that
+the server is running read-only and that an operator has to restart it with
+--read-only=false. Nothing deletes in either mode.`
+
+const writingGuide = `This server is running with writes enabled, so some tools change the control
+plane. They are annotated: readOnlyHint is false on every one of them.
+
+Writes here only create and update. There is no tool that deletes anything, and
+no way to make one of these tools delete. If the user asks you to remove
+something, say so and offer crossplane_impact, which reports what a deletion
+would destroy, so they can run it themselves.
+
+Never provision by writing a managed resource directly. Ask the platform API
+for what you want instead and let the Composition decide which managed
+resources that means. crossplane_database_create and crossplane_workload_create
+do exactly that: they find the claim or composite kind this control plane
+offers, fill in the fields its XRD declares, and apply the result.
+
+When creating something:
+- Call the tool with dryRun=true first if the user was not specific. The answer
+  shows the exact manifest that would be submitted, and which of the requested
+  values the platform API has no field for.
+- Then call it again without dryRun and follow with crossplane_resource_tree on
+  what you created. Provisioning is asynchronous: a resource that exists is not
+  yet a resource that is Ready.
+- If no platform API matches what was asked for, say so and offer
+  crossplane_xrds_list. Do not invent an apiVersion.
+
+crossplane_resource_apply updates in place. Applying over a resource somebody
+else manages is how you break their configuration, so read it with
+crossplane_resource_get first and say what you are changing.`

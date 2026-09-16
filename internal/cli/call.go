@@ -40,7 +40,11 @@ to see the exact schema a tool accepts.`,
   crossplane-mcp-server call crossplane_diagnose '{"kind":"Bucket","name":"app-data"}'
 
   # Print the structured payload a model receives instead of the text rendering
-  crossplane-mcp-server call crossplane_status --json`,
+  crossplane-mcp-server call crossplane_status --json
+
+  # Write tools exist only when writes are enabled, and dryRun shows the manifest
+  crossplane-mcp-server --read-only=false call crossplane_database_create \
+    '{"name":"orders-db","size":"small","dryRun":true}'`,
 		Args:          cobra.RangeArgs(1, 2),
 		SilenceUsage:  true,
 		SilenceErrors: true,
@@ -110,6 +114,7 @@ func buildServer(opts *options) (*mcp.Server, error) {
 	return mcp.NewServer(mcp.Config{
 		Provider:    crossplane.NewProvider(loader),
 		Toolsets:    selected,
+		AllowWrite:  !opts.readOnly,
 		Logger:      newLogger(opts.logLevel),
 		ToolTimeout: opts.toolTimeout,
 	})

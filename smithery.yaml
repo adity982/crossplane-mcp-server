@@ -17,6 +17,6 @@ startCommand:
         "--rm",
         "-v",
         `${config?.kubeconfigPath || process.env.HOME + '/.kube'}:/home/nonroot/.kube:ro`,
-        "ghcr.io/ravibagri5/crossplane-mcp-server:v0.1.3"
+        "ghcr.io/ravibagri5/crossplane-mcp-server:v0.2.0"
       ]
     })

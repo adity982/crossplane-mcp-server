@@ -205,10 +205,23 @@ stating:
 - **Name handlers after the thing then the verb**, matching the tool name:
   `resourceGet`, `usagesList`, `driftDetect`. Group constructors end in
   `Tools()`.
-- **Every tool is read only.** There is no code path in this server that
-  creates, updates or deletes, and `api.Tool.Destructive` exists to keep the
-  annotations honest if that ever changes. A pull request that adds a write
-  needs to argue for it first.
+- **Read-only unless you say otherwise.** A tool that changes the control plane
+  sets `api.Tool.Write` and lives in the `provisioning` toolset. The server
+  withholds those tools unless it was started with `--read-only=false`, and a
+  test enforces that a tool carries the flag if and only if it is in that
+  toolset. Everything else stays `get` and `list`.
+- **No tool deletes.** Writes create and update, and `pkg/crossplane` has no
+  `Delete` method to call. This is a project decision rather than a gap; a pull
+  request that adds deletion needs an accepted design proposal first, covering
+  consent, and it is not a small one.
+- **Write through the client, not around it.** `crossplane.Client.Apply` is the
+  only write path, and it refuses anything that is not a Crossplane kind. Do
+  not reach for the dynamic client directly.
+- **Provision through platform APIs.** A tool that creates infrastructure asks
+  the control plane's own XRD-defined API for it and sets only fields that
+  API's schema declares. Writing a managed resource directly bypasses the
+  platform team, and guessing at field names makes the API server prune them
+  silently.
 
 ## Testing
 

@@ -52,8 +52,8 @@ does not ship, however useful it seems.
 
 ## Now — shipped
 
-The read-only core, which is what ships today. Thirty tools across five
-toolsets; see the tool table in [README.md](README.md).
+The read-only core, which is what ships today, plus a first tier of opt-in
+writes. Six toolsets; see the tool table in [README.md](README.md).
 
 - [x] Managed resource counts, listings and status
 - [x] Composite resources and claims
@@ -71,6 +71,11 @@ toolsets; see the tool table in [README.md](README.md).
       kubeconfig
 - [x] stdio and streamable HTTP transports
 - [x] Crossplane v1 and v2 layouts
+- [x] Opt-in provisioning behind `--read-only=false`: create a database or a
+      workload through the control plane's own platform APIs, and apply a
+      Crossplane manifest. Withheld by default, restricted to Crossplane kinds,
+      server-side apply throughout, and no deletion at all. See the first tier
+      of [v0.8](#v08--opt-in-write-capabilities) for what is still missing.
 
 ## v0.5 — Deep diagnosis
 
@@ -169,32 +174,40 @@ mutating anything.
 would sign off on. This is the largest design risk in the project, and each tier
 needs a design proposal before implementation.
 
-Write support is **off by default** and is layered. Tiers are enabled
-independently; enabling one never implies the next.
+The first step has shipped: `--read-only=false` registers the `provisioning`
+toolset, which creates through platform APIs and applies Crossplane manifests.
+It does not delete, and tier 3 below is not scheduled. Write support is still
+**off by default** and the remaining tiers are still layered, enabled
+independently, with enabling one never implying the next.
 
 | Tier | Flag | Capability | Reversible |
 | --- | --- | --- | --- |
 | 0 | *(default)* | Read-only | n/a |
 | 1 | `--allow-write=annotate` | Force reconcile, pause and resume, label and annotate | Yes |
-| 2 | `--allow-write=apply` | Create and update claims, XRs, Compositions, packages | Mostly |
-| 3 | `--allow-write=delete` | Delete resources, uninstall packages | No |
+| 2 | `--read-only=false` | Create and update claims, XRs, Compositions *(shipped)* | Mostly |
+| 3 | none | Delete resources, uninstall packages. **Not planned**: the blast radius of a mistaken delete on a control plane is a production database | No |
 
-Cross-cutting requirements, all of which must land before tier 2:
+Cross-cutting requirements, all of which must land before the tiers are split
+out properly:
 
-- [ ] **Dry run first.** Every mutating tool takes a `dryRun` argument that
-      defaults to true, and returns a server-side-apply diff of what would
-      change.
+- [ ] **Dry run first.** Every mutating tool takes a `dryRun` argument, but it
+      defaults to false and returns the submitted manifest rather than a
+      server-side-apply diff of what would change.
 - [ ] **Elicitation-based consent.** The client shows the human the rendered
-      diff before anything is applied. No consent, no write.
-- [ ] **Least-privilege RBAC.** A shipped `Role` per tier, and the server
-      refusing to advertise a tool it does not have permission to perform.
+      diff before anything is applied. No consent, no write. Today the tool
+      annotations leave the decision to the client.
+- [ ] **Least-privilege RBAC.** `deploy/rbac-write.yaml` is a starting point.
+      Still missing: a `Role` per tier, and the server refusing to advertise a
+      tool it does not have permission to perform.
 - [ ] **Allow-lists.** Restrict writes by namespace, by group and kind, and by
       label selector, so a read-mostly deployment can permit exactly one
-      workflow.
-- [ ] **Field management.** All writes use server-side apply with a distinct
-      field manager, so ownership stays visible and reversible.
+      workflow. Today the only restriction is "Crossplane kinds only".
+- [x] **Field management.** All writes use server-side apply with the field
+      manager `crossplane-mcp-server`, so ownership stays visible and
+      reversible.
 - [ ] **Audit and idempotency.** Every write is logged with its diff and carries
-      a client-supplied idempotency key.
+      a client-supplied idempotency key. Applies are idempotent today, but
+      there is no key and no diff in the log.
 - [ ] **Blast-radius caps.** A hard limit on objects touched per call, and a
       refusal above it.
 

@@ -3,7 +3,10 @@
 Generated from the tool definitions. Run `crossplane-mcp-server tools` to print
 the list from your own build.
 
-Every tool is read-only.
+Every tool is read-only except the `provisioning` toolset, which is withheld
+unless the server was started with `--read-only=false`. Those tools are marked
+**write** below, and `crossplane-mcp-server tools` marks them `[write]`. No
+tool in this server deletes anything, in either mode.
 
 ## The `cluster` argument
 
@@ -50,6 +53,14 @@ crossplane_xrds_list  →  crossplane_xrd_schema  →  crossplane_composition_re
 
 ```text
 crossplane_deleting_resources  →  crossplane_usages_list
+```
+
+**Provision something** (needs `--read-only=false`)
+
+```text
+crossplane_database_create   with dryRun: true, to see the manifest
+crossplane_database_create   again, without it
+crossplane_resource_tree     watch it come up; creating is not the same as Ready
 ```
 
 **Ask about another control plane**
@@ -348,3 +359,81 @@ The Crossplane API surface, for discovering exact kinds and groups.
 | `category` | enum | no | `all`, `managed`, `composite`, `claim` |
 | `group` | string | no | Restrict to one API group |
 | `search` | string | no | Case insensitive substring of the kind or group |
+
+---
+
+## Toolset: `provisioning`
+
+**Every tool in this toolset writes.** None of them is registered unless the
+server runs with `--read-only=false`.
+
+Two limits hold whatever the arguments say:
+
+- **Nothing here deletes.** These tools create and update. There is no delete
+  tool, and no argument that turns one of these into one. Use
+  `crossplane_impact` to work out what a deletion would destroy, then run it
+  yourself.
+- **Only Crossplane kinds can be written.** Anything not tagged `managed`,
+  `composite`, `claim` or `crossplane`, and not in a `*.crossplane.io` group,
+  is refused.
+
+All three accept `dryRun`, which asks the API server to validate the change
+without persisting it.
+
+### `crossplane_database_create`
+
+Ask this control plane's own platform API for a database.
+
+The tool finds the claim or composite kind whose name reads most like a
+database, reads the schema from the XRD that defines it, and sets only the
+fields that schema declares — under `spec.parameters` if the API puts them
+there, at the top level of `spec` if not. Values the API has no field for are
+reported back rather than dropped.
+
+| Argument | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | string | **yes** | Name for the database |
+| `namespace` | string | no | Namespace, defaults to the server's default |
+| `engine` | enum | no | `postgresql`, `mysql`, `mariadb`, `redis` |
+| `version` | string | no | Engine version, e.g. `16` |
+| `size` | enum | no | `small`, `medium`, `large` |
+| `storageGB` | integer | no | Storage to request, in gigabytes |
+| `kind` | string | no | Kind to create, to override the discovered one |
+| `apiVersion` | string | no | API version of that kind, if it is ambiguous |
+| `parameters` | object | no | Extra spec fields, for the parts of the API this tool does not know about |
+| `dryRun` | boolean | no | Validate without creating, default `false` |
+
+If nothing matches, the answer lists the platform APIs that do exist. Pass
+`kind` rather than guessing an `apiVersion`.
+
+### `crossplane_workload_create`
+
+The same, for a workload, app or service.
+
+| Argument | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | string | **yes** | Name for the workload |
+| `namespace` | string | no | Namespace, defaults to the server's default |
+| `image` | string | no | Container image to run |
+| `replicas` | integer | no | How many instances |
+| `port` | integer | no | Port the container listens on |
+| `size` | enum | no | `small`, `medium`, `large` |
+| `kind`, `apiVersion`, `parameters`, `dryRun` | | no | As above |
+
+### `crossplane_resource_apply`
+
+Apply a manifest, creating it or updating it in place. For the things the tools
+above do not cover: XRDs, Compositions, EnvironmentConfigs, or a composite
+resource whose spec you wrote yourself.
+
+| Argument | Type | Required | Description |
+| --- | --- | --- | --- |
+| `manifest` | string | **yes** | YAML or JSON. Several documents may be separated by `---` |
+| `namespace` | string | no | Namespace for documents that do not name one |
+| `force` | boolean | no | Take over fields another field manager owns, default `false` |
+| `dryRun` | boolean | no | Validate without persisting, default `false` |
+
+Applies are server-side, under the field manager `crossplane-mcp-server`.
+Documents are applied in order, and a failure reports which of them already
+went in. An apply can overwrite fields on a resource that already exists, so
+read it with `crossplane_resource_get` first.
