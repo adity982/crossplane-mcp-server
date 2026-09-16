@@ -117,6 +117,45 @@ if err := p.Args.Err(); err != nil {
 A model that passes three bad arguments gets told about all three at once,
 rather than discovering them one round trip at a time.
 
+## The write path
+
+Writes create and update. There is no delete: `pkg/crossplane` has no `Delete`
+method and no tool calls one, so the worst an assistant can do is leave a
+resource behind. That is a deliberate ceiling, not an unimplemented feature —
+on a Crossplane control plane a deleted object is a production database, and
+the only safe amount of "the model decided to remove it" is none.
+
+What writes there are are off by default and gated in three places. Anything
+that changes a control plane should be hard to enable by accident:
+
+1. **Declaration.** A tool sets `api.Tool.Write`, which drives the
+   `readOnlyHint` annotation. A test asserts that a tool carries the flag if
+   and only if it lives in the `provisioning` toolset, so a write cannot hide
+   inside a toolset people think of as read-only.
+2. **Registration.** `mcp.Config.AllowWrite` decides whether those tools are
+   registered at all. A withheld tool is absent from `tools/list`, so the model
+   never learns it exists. `Server.invoke` checks again, in case a handler is
+   reached another way.
+3. **The client.** `Client.Apply` rejects any resource that is not a Crossplane
+   one, checked against the categories and the `*.crossplane.io` groups. RBAC
+   should stop the same thing, but the server should not depend on somebody
+   else's ClusterRole being correct.
+
+Everything goes out as a server-side apply under the field manager
+`crossplane-mcp-server`. Apply rather than create because a model that retries
+a call should update rather than collide, and because it leaves `kubectl apply`
+working on the same object. It is also why every tool can honestly declare
+`idempotentHint: true` and `destructiveHint: false`.
+
+`pkg/toolsets/provisioning` does one more thing worth knowing about: it does
+not assume what a platform API looks like. `crossplane_database_create` finds
+the claim or composite kind whose name reads most like a database, reads the
+schema from the XRD that defines it, and only sets fields that schema declares.
+Requested values with nowhere to go are reported in the answer instead of being
+silently pruned by the API server, which is the difference between "your
+platform API has no storageGB field" and a database that quietly came up with
+the wrong disk.
+
 ## Transports
 
 `pkg/mcp` exposes two:

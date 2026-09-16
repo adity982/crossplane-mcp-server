@@ -29,6 +29,11 @@ type Config struct {
 	Provider *crossplane.Provider
 	// Toolsets are the tool groups to expose.
 	Toolsets []api.Toolset
+	// AllowWrite exposes the tools that change the control plane. It is off
+	// unless the operator asked for it: a server nobody granted write access
+	// to should not be able to create or update anything, and a tool the
+	// client never sees cannot be called.
+	AllowWrite bool
 	// Logger receives operational logs. Never write logs to stdout when the
 	// stdio transport is in use: stdout carries the protocol.
 	Logger *slog.Logger
@@ -58,16 +63,17 @@ func NewServer(config Config) (*Server, error) {
 		Title:      "Crossplane",
 		Version:    version.Version,
 		WebsiteURL: "https://github.com/ravibagri5/crossplane-mcp-server",
-		Description: "Read-only access to a Crossplane control plane: managed resources, composite resources, " +
-			"claims, packages, compositions and their health.",
+		Description: "Access to a Crossplane control plane: managed resources, composite resources, " +
+			"claims, packages, compositions and their health. Read-only unless writes are enabled.",
 	}
 
 	s := &Server{
-		sdk:    sdk.NewServer(impl, &sdk.ServerOptions{Instructions: instructions}),
+		sdk:    sdk.NewServer(impl, &sdk.ServerOptions{Instructions: instructions(config.AllowWrite)}),
 		config: config,
 	}
 
 	seen := map[string]string{}
+	withheld := 0
 	for _, toolset := range config.Toolsets {
 		for _, tool := range toolset.Tools() {
 			if owner, duplicate := seen[tool.Name]; duplicate {
@@ -75,11 +81,19 @@ func NewServer(config Config) (*Server, error) {
 					tool.Name, owner, toolset.Name())
 			}
 			seen[tool.Name] = toolset.Name()
+			// A withheld tool is not declared at all, so the model never learns
+			// it exists and cannot be talked into trying it.
+			if tool.Mutates() && !config.AllowWrite {
+				withheld++
+				continue
+			}
 			s.register(tool)
 			s.tools = append(s.tools, tool)
 		}
 	}
-	config.Logger.Info("registered tools", "tools", len(s.tools), "toolsets", len(config.Toolsets))
+	config.Logger.Info("registered tools",
+		"tools", len(s.tools), "toolsets", len(config.Toolsets),
+		"writes", config.AllowWrite, "withheld", withheld)
 	s.registerPrompts()
 	return s, nil
 }
@@ -159,6 +173,13 @@ func (s *Server) Call(ctx context.Context, name string, arguments map[string]any
 // invoke runs one tool against the cluster its arguments select.
 func (s *Server) invoke(ctx context.Context, tool api.Tool, arguments map[string]any) (*api.Result, error) {
 	started := time.Now()
+
+	// Withheld tools are never registered, so this only fires if something
+	// reaches a handler another way. Writes are worth checking twice.
+	if tool.Mutates() && !s.config.AllowWrite {
+		return api.Errorf("tool %q changes the control plane and this server is running read-only: "+
+			"restart it with --read-only=false to allow writes", tool.Name), nil
+	}
 
 	if s.config.ToolTimeout > 0 {
 		var cancel context.CancelFunc

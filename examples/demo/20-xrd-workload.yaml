@@ -1,0 +1,45 @@
+# A platform API for workloads, so the demo has something for
+# crossplane_workload_create to find as well.
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xapps.demo.crossplane.io
+spec:
+  group: demo.crossplane.io
+  names:
+    kind: XApp
+    plural: xapps
+  claimNames:
+    kind: App
+    plural: apps
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                parameters:
+                  type: object
+                  properties:
+                    image:
+                      type: string
+                      default: ghcr.io/nginxinc/nginx-unprivileged:stable
+                    replicas:
+                      type: integer
+                      default: 1
+                    port:
+                      type: integer
+                      default: 8080
+                    size:
+                      type: string
+                      enum: [small, medium, large]
+                      default: small
+                  required:
+                    - image
+              required:
+                - parameters

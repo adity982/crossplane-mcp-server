@@ -39,6 +39,12 @@ func IntProp(description string) *jsonschema.Schema {
 	return &jsonschema.Schema{Type: "integer", Description: description}
 }
 
+// ObjectProp declares a free-form object argument, used where the accepted
+// fields come from the control plane rather than from this server.
+func ObjectProp(description string) *jsonschema.Schema {
+	return &jsonschema.Schema{Type: "object", Description: description}
+}
+
 // ClusterArg is the argument name used to select a cluster. It is added to
 // every tool's schema by the MCP layer rather than declared tool by tool, so
 // that it cannot drift.
@@ -63,4 +69,9 @@ var (
 
 	// LimitProp caps how many objects a tool returns.
 	LimitProp = IntProp("Maximum number of objects to return per kind. Defaults to 500.")
+
+	// DryRunProp asks the API server to validate a write without persisting
+	// it. Shared by every tool that changes the control plane.
+	DryRunProp = BoolProp("Send the change to the API server for validation but do not persist it. " +
+		"Use this to check a manifest is accepted before creating anything. Defaults to false.")
 )

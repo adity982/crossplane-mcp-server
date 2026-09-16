@@ -42,21 +42,29 @@ type Tool struct {
 	Title       string
 	Description string
 	InputSchema *jsonschema.Schema
-	// Destructive marks tools that mutate the control plane. Every tool in
-	// this server is currently read only, but the flag keeps the annotations
-	// honest as the tool surface grows.
-	Destructive bool
-	Handler     Handler
+	// Write marks tools that change the control plane. The server refuses to
+	// register them unless it was started with writes explicitly enabled, so a
+	// tool author opting in here cannot widen an existing deployment by
+	// accident.
+	//
+	// Writes create and update. Nothing in this server deletes, which is why
+	// there is no flag for it.
+	Write   bool
+	Handler Handler
 }
+
+// Mutates reports whether the tool changes the control plane.
+func (t Tool) Mutates() bool { return t.Write }
 
 // Annotations renders the MCP tool annotations for the tool.
 func (t Tool) Annotations() *mcp.ToolAnnotations {
-	readOnly := !t.Destructive
+	// Nothing here removes anything, and every write is a server side apply,
+	// so repeating a call lands in the same place as making it once.
 	return &mcp.ToolAnnotations{
 		Title:           t.Title,
-		ReadOnlyHint:    readOnly,
-		DestructiveHint: &t.Destructive,
-		IdempotentHint:  readOnly,
+		ReadOnlyHint:    !t.Mutates(),
+		DestructiveHint: boolPtr(false),
+		IdempotentHint:  true,
 		OpenWorldHint:   boolPtr(true),
 	}
 }

@@ -12,11 +12,16 @@ import (
 	_ "github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets/config"
 	_ "github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets/diagnostics"
 	_ "github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets/packages"
+	_ "github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets/provisioning"
 	_ "github.com/ravibagri5/crossplane-mcp-server/pkg/toolsets/resources"
 )
 
+// all is the registry in the order Names returns it, which several cases
+// below assert against.
+var all = []string{"compositions", "config", "diagnostics", "packages", "provisioning", "resources"}
+
 func TestAllToolsetsAreRegistered(t *testing.T) {
-	assert.Equal(t, []string{"compositions", "config", "diagnostics", "packages", "resources"}, toolsets.Names())
+	assert.Equal(t, all, toolsets.Names())
 }
 
 func TestSelect(t *testing.T) {
@@ -27,11 +32,11 @@ func TestSelect(t *testing.T) {
 	}{
 		"EmptySelectsEverything": {
 			names: nil,
-			want:  []string{"compositions", "config", "diagnostics", "packages", "resources"},
+			want:  all,
 		},
 		"AllSelectsEverything": {
 			names: []string{"all"},
-			want:  []string{"compositions", "config", "diagnostics", "packages", "resources"},
+			want:  all,
 		},
 		"SelectionKeepsRegistryOrder": {
 			names: []string{"resources", "diagnostics"},
@@ -87,10 +92,16 @@ func TestEveryToolIsWellFormed(t *testing.T) {
 				assert.Equal(t, "object", tool.InputSchema.Type, "MCP input schemas must be objects")
 				assert.NotNil(t, tool.Handler)
 
-				// Everything this server exposes is read only. If that ever
-				// changes it should be a deliberate decision, not an accident.
-				assert.False(t, tool.Destructive, "tool %q is marked destructive", tool.Name)
-				assert.True(t, tool.Annotations().ReadOnlyHint)
+				// Mutating tools live in one toolset and nowhere else. A tool
+				// that changes the control plane from inside a toolset people
+				// think of as read-only would be a nasty surprise, and the
+				// docs promise the provisioning toolset is all writes.
+				assert.Equal(t, toolset.Name() == "provisioning", tool.Mutates(),
+					"a tool writes if and only if it is in the provisioning toolset")
+				assert.Equal(t, !tool.Mutates(), tool.Annotations().ReadOnlyHint,
+					"the annotation has to agree with the flag, it is what clients gate on")
+				assert.False(t, *tool.Annotations().DestructiveHint,
+					"no tool in this server removes anything: writes create or update")
 			})
 		}
 	}

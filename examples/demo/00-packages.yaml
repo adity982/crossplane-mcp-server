@@ -1,0 +1,20 @@
+# Packages the demo needs.
+#
+# provider-nop is a Crossplane provider that pretends. Its NopResource does no
+# real work and reports whatever conditions you ask it to, after a delay, which
+# is exactly what a demo wants: the full Crossplane lifecycle, no cloud account
+# and no bill.
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-nop
+spec:
+  package: xpkg.upbound.io/crossplane-contrib/provider-nop:v0.4.0
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Function
+metadata:
+  name: function-patch-and-transform
+spec:
+  package: xpkg.upbound.io/crossplane-contrib/function-patch-and-transform:v0.7.0
