@@ -1,0 +1,44 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: xapps.nop.demo.crossplane.io
+spec:
+  compositeTypeRef:
+    apiVersion: demo.crossplane.io/v1alpha1
+    kind: XApp
+  mode: Pipeline
+  pipeline:
+    - step: patch-and-transform
+      functionRef:
+        name: function-patch-and-transform
+      input:
+        apiVersion: pt.fn.crossplane.io/v1beta1
+        kind: Resources
+        resources:
+          - name: runtime
+            base:
+              apiVersion: nop.crossplane.io/v1alpha1
+              kind: NopResource
+              spec:
+                forProvider:
+                  conditionAfter:
+                    - time: 5s
+                      conditionType: Ready
+                      conditionStatus: "False"
+                    - time: 15s
+                      conditionType: Ready
+                      conditionStatus: "True"
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.image
+                toFieldPath: metadata.annotations[demo.crossplane.io/image]
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.size
+                toFieldPath: metadata.annotations[demo.crossplane.io/size]
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.replicas
+                toFieldPath: metadata.annotations[demo.crossplane.io/replicas]
+                transforms:
+                  - type: convert
+                    convert:
+                      toType: string

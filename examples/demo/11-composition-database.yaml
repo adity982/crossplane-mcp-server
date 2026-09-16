@@ -1,0 +1,58 @@
+# What a database means on this control plane: one NopResource that reports
+# Ready after twenty seconds.
+#
+# Swap the base for an RDSInstance and the same platform API provisions a real
+# database, without anything changing in the MCP server or in what the
+# assistant asks for. That is the point of composing.
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: xpostgresqlinstances.nop.demo.crossplane.io
+spec:
+  compositeTypeRef:
+    apiVersion: demo.crossplane.io/v1alpha1
+    kind: XPostgreSQLInstance
+  mode: Pipeline
+  pipeline:
+    - step: patch-and-transform
+      functionRef:
+        name: function-patch-and-transform
+      input:
+        apiVersion: pt.fn.crossplane.io/v1beta1
+        kind: Resources
+        resources:
+          - name: instance
+            base:
+              apiVersion: nop.crossplane.io/v1alpha1
+              kind: NopResource
+              spec:
+                forProvider:
+                  # Provisioning takes time in real life, so it takes time
+                  # here: the resource is deliberately not Ready at first.
+                  conditionAfter:
+                    - time: 5s
+                      conditionType: Ready
+                      conditionStatus: "False"
+                    - time: 20s
+                      conditionType: Ready
+                      conditionStatus: "True"
+            patches:
+              # Annotations rather than spec fields: provider-nop ignores the
+              # values either way, and annotations make the requested size and
+              # version visible in crossplane_resource_get.
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.engine
+                toFieldPath: metadata.annotations[demo.crossplane.io/engine]
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.version
+                toFieldPath: metadata.annotations[demo.crossplane.io/version]
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.size
+                toFieldPath: metadata.annotations[demo.crossplane.io/size]
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.storageGB
+                toFieldPath: metadata.annotations[demo.crossplane.io/storage-gb]
+                transforms:
+                  - type: convert
+                    convert:
+                      toType: string

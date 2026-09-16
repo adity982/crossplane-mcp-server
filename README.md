@@ -39,8 +39,37 @@ every failure, instead of guessing.
   Fix the instanceClass field in your Composition and the claim will reconcile.
 ```
 
-Every tool is **read-only**. This server cannot create, update or delete
-anything on your control plane.
+The server is **read-only by default**: the tools that create and update are
+not registered at all unless you start it with `--read-only=false`, so a client
+cannot see them, let alone call them. Nothing deletes in either mode. Turn
+writes on and the same assistant can provision from your platform APIs:
+
+```text
+> Create a small Postgres database called orders-db.
+
+  crossplane_database_create(name="orders-db", engine="postgresql", size="small")
+
+  Created PostgreSQLInstance default/orders-db on kind-crossplane.
+
+  apiVersion: demo.crossplane.io/v1alpha1
+  kind: PostgreSQLInstance
+  metadata:
+    name: orders-db
+    namespace: default
+  spec:
+    parameters:
+      engine: postgresql
+      size: small
+      version: "16"
+
+  Next: provisioning is asynchronous. Call crossplane_resource_tree with
+  {"kind":"PostgreSQLInstance","name":"orders-db"} to watch it come up.
+```
+
+Nothing there names a Kubernetes kind. The tool found the platform API this
+control plane offers, read the schema its XRD declares and filled it in.
+See [examples/demo](examples/demo) for a control plane you can try it on
+without a cloud account.
 
 ## Contents
 
@@ -49,6 +78,7 @@ anything on your control plane.
 - [Installation](#installation)
 - [Client configuration](#client-configuration)
 - [Tools](#tools)
+- [Read-only and write modes](#read-only-and-write-modes)
 - [Prompts](#prompts)
 - [Calling a tool directly](#calling-a-tool-directly)
 - [Configuration](#configuration)
@@ -78,12 +108,14 @@ happily delete it.
 | Explain why a delete is hanging | No | `crossplane_deleting_resources` names the Usage, finalizer or provider holding it |
 | Say what a delete would destroy first | No | `crossplane_impact` reports the blast radius before you act |
 | Simulate a change without touching the cluster | No | `crossplane_composition_render` runs the function pipeline offline |
-| Write to your cluster | Yes: create, update, delete, exec | **Never.** There is no code path that mutates anything |
+| Write to your cluster | Yes, always: create, update, delete, exec | Only if you ask. Off by default, never deletes, limited to Crossplane kinds, and it provisions through your platform APIs rather than writing managed resources by hand |
 
 That last row matters more here than it does for ordinary Kubernetes work. On a
 Crossplane control plane a deleted object is not a pod that a ReplicaSet will
-recreate, it is a production database. A tool surface that cannot mutate is one
-you can point at your production control plane without a change review.
+recreate, it is a production database. Point this server at production and it
+cannot mutate anything; point it at a development control plane with
+`--read-only=false` and it still cannot delete a resource, and cannot touch a
+Secret, a Deployment or an RBAC rule at all.
 
 Underneath, the Crossplane knowledge this server encodes is:
 
@@ -211,6 +243,10 @@ extensions:
     timeout: 300
 ```
 
+Add `--read-only=false` to `args` to let goose provision as well as inspect.
+[examples/demo](examples/demo) walks through that end to end on a throwaway
+cluster.
+
 ### VS Code
 
 Add to `.vscode/mcp.json` in your workspace:
@@ -307,11 +343,62 @@ How the control plane itself is configured.
 | `crossplane_impact` | What a deletion would destroy, and whether it would be blocked |
 | `crossplane_api_resources` | The Crossplane API surface, to find exact kinds and groups |
 
+### `provisioning`
+
+Withheld unless the server runs with `--read-only=false`. See
+[Read-only and write modes](#read-only-and-write-modes).
+
+| Tool | What it does |
+| --- | --- |
+| `crossplane_database_create` | Asks the control plane's own database API for a database, filling in the fields its XRD declares |
+| `crossplane_workload_create` | The same for a workload, app or service |
+| `crossplane_resource_apply` | Applies a Crossplane manifest, for XRDs, Compositions and specs you built yourself |
+
 Expose a subset with `--toolsets`:
 
 ```shell
 crossplane-mcp-server --toolsets diagnostics,packages
 ```
+
+## Read-only and write modes
+
+The server starts read-only. In that mode the write tools are never registered,
+so `tools/list` does not mention them and a call to one comes back as "no tool
+named": there is nothing for a model to be talked into.
+
+```shell
+# Read-only. The default, and what to use against production.
+crossplane-mcp-server
+
+# Writes enabled, for a development control plane.
+crossplane-mcp-server --read-only=false
+```
+
+What stays true even with writes enabled:
+
+- **Nothing deletes.** Writes create and update, and that is the whole list.
+  There is no delete tool and no `Delete` call anywhere in the codebase, so the
+  worst outcome of a confused assistant is a resource you did not want, not one
+  you did. `crossplane_impact` still tells you what a deletion *would* destroy,
+  and you run the deletion yourself.
+- **Only Crossplane kinds can be written.** The write path checks the resource
+  against Crossplane's categories and API groups and refuses everything else,
+  so the server cannot create a Secret, edit a Deployment or grant itself RBAC
+  no matter what it is asked.
+- **Provisioning goes through your platform APIs.** `crossplane_database_create`
+  reads the XRD and sets the fields it declares; it does not invent a managed
+  resource and it does not set fields the API has never heard of. Values with
+  nowhere to go are reported back rather than dropped.
+- **Everything is a server-side apply**, under the field manager
+  `crossplane-mcp-server`, so a retry updates rather than duplicates and
+  `kubectl apply` keeps working alongside it. Every object gets the label
+  `app.kubernetes.io/created-by=crossplane-mcp-server`.
+- **`dryRun` is available on every write tool**, which asks the API server to
+  validate the manifest without persisting it.
+- **RBAC still decides.** `--read-only=false` cannot grant permissions the
+  credentials do not have. `deploy/rbac-write.yaml` is a starting point that
+  allows create and update on your platform APIs and nothing else — not even
+  `delete`.
 
 ## Prompts
 
@@ -348,6 +435,10 @@ crossplane-mcp-server call crossplane_status --json
 
 # Against another control plane
 crossplane-mcp-server call crossplane_status --context prod
+
+# Write tools need the mode as well, and dryRun shows what would be submitted
+crossplane-mcp-server --read-only=false call crossplane_database_create \
+  '{"name":"orders-db","size":"small","dryRun":true}'
 ```
 
 Run `crossplane-mcp-server tools --json` to see the exact arguments a tool
@@ -362,6 +453,7 @@ accepts.
 | `--clusters` | every context | Comma separated contexts to expose as targets |
 | `--namespace` | context namespace, else `default` | Default namespace for namespaced resources |
 | `--toolsets` | all | Comma separated toolsets to expose |
+| `--read-only` | `true` | Withhold every tool that changes the control plane. `--read-only=false` enables create and update; nothing deletes in either mode |
 | `--http-address` | *(unset)* | Serve streamable HTTP on this address instead of stdio |
 | `--log-level` | `info` | `debug`, `info`, `warn` or `error`. Logs always go to stderr |
 | `--tool-timeout` | `2m` | Maximum time a single tool call may run. `0` disables |
@@ -460,6 +552,12 @@ rules:
 
 If you would rather not grant a cluster-wide read, `deploy/rbac-minimal.yaml`
 narrows the permissions at the cost of some tools returning warnings.
+
+A server started with `--read-only=false` needs write verbs as well, and should
+only be given them on the platform APIs an assistant is meant to use.
+`deploy/rbac-write.yaml` grants `create`, `update` and `patch` on a named list
+of API groups. It grants no `delete`, because no tool deletes, and leaves out
+packages: installing a Provider runs somebody else's code in your cluster.
 
 ## Contributing
 

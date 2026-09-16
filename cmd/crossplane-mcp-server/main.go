@@ -1,5 +1,5 @@
 // Command crossplane-mcp-server runs a Model Context Protocol server that
-// gives AI assistants read-only access to a Crossplane control plane.
+// gives AI assistants access to a Crossplane control plane.
 package main
 
 import (

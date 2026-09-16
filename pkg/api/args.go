@@ -113,6 +113,22 @@ func (a *Args) OptionalInt(name string, fallback int) int {
 	}
 }
 
+// OptionalMap reads a free-form object argument. It is used where the accepted
+// fields are defined by the control plane, such as the spec of a platform API
+// this server has never seen before.
+func (a *Args) OptionalMap(name string) map[string]any {
+	value, ok := a.raw[name]
+	if !ok || value == nil {
+		return nil
+	}
+	m, ok := value.(map[string]any)
+	if !ok {
+		a.fail("argument %q must be an object, got %T", name, value)
+		return nil
+	}
+	return m
+}
+
 func (a *Args) fail(format string, args ...any) {
 	a.errs = append(a.errs, fmt.Errorf(format, args...))
 }

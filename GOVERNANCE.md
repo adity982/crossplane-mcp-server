@@ -9,9 +9,10 @@ to propose as part of the Crossplane project proper.
 
 - **Open.** Design discussion happens in public issues and pull requests. If a
   decision was made somewhere else, it gets written down here.
-- **Read-only by default.** The project will not add a tool that mutates a
-  control plane without an accepted design proposal that covers consent and
-  auditability. This is a load-bearing property, not a temporary limitation.
+- **Read-only by default.** Tools that mutate a control plane are withheld
+  unless an operator explicitly enables them, and adding one requires an
+  accepted design proposal that covers consent and auditability. The default
+  is a load-bearing property, not a temporary limitation.
 - **Small dependency footprint.** Every dependency is a supply chain risk for
   everyone who installs the binary.
 - **Works with any provider.** Nothing in this codebase may hard-code knowledge
