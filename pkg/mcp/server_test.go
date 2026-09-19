@@ -2,12 +2,21 @@ package mcp
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/discovery/fake"
+	"k8s.io/client-go/dynamic"
+	dynamicfake "k8s.io/client-go/dynamic/fake"
 	k8sfake "k8s.io/client-go/kubernetes/fake"
+	ktesting "k8s.io/client-go/testing"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
@@ -20,6 +29,14 @@ import (
 type testToolset struct {
 	name  string
 	tools []api.Tool
+}
+
+type preferredDiscovery struct {
+	*fake.FakeDiscovery
+}
+
+func (d *preferredDiscovery) ServerPreferredResources() ([]*metav1.APIResourceList, error) {
+	return d.Resources, nil
 }
 
 func (t *testToolset) Name() string        { return t.name }
@@ -164,6 +181,41 @@ func TestServerExposesToolsOverTheProtocol(t *testing.T) {
 	})
 }
 
+func TestServerExposesLiveXRDSchemasAsResources(t *testing.T) {
+	provider, dynamicClient := newXRDProvider(t)
+	server, err := NewServer(Config{Provider: provider})
+	require.NoError(t, err)
+	require.NoError(t, server.refreshXRDResources(context.Background()))
+
+	session := connect(t, server)
+	listed, err := session.ListResources(context.Background(), nil)
+	require.NoError(t, err)
+	require.Len(t, listed.Resources, 2)
+	assert.Equal(t, "crossplane://xrd/example.org/XDatabase/v1alpha1", listed.Resources[0].URI)
+	assert.Equal(t, "crossplane://xrd/example.org/XDatabase/v1beta1", listed.Resources[1].URI)
+
+	templates, err := session.ListResourceTemplates(context.Background(), nil)
+	require.NoError(t, err)
+	require.Len(t, templates.ResourceTemplates, 1)
+	assert.Equal(t, "crossplane://xrd/{group}/{kind}/{version}", templates.ResourceTemplates[0].URITemplate)
+
+	read, err := session.ReadResource(context.Background(), &sdk.ReadResourceParams{URI: listed.Resources[0].URI})
+	require.NoError(t, err)
+	require.Len(t, read.Contents, 1)
+	var decoded crossplane.XRDSchema
+	require.NoError(t, json.Unmarshal([]byte(read.Contents[0].Text), &decoded))
+	assert.Equal(t, "example.org/v1alpha1", decoded.APIVersion)
+	assert.Equal(t, "XDatabase", decoded.CompositeKind)
+
+	gvr := schema.GroupVersionResource{Group: crossplane.GroupAPIExtensions, Version: "v1", Resource: "compositeresourcedefinitions"}
+	require.NoError(t, dynamicClient.Resource(gvr).Delete(context.Background(), "xdatabases.example.org", metav1.DeleteOptions{}))
+	require.NoError(t, server.refreshXRDResources(context.Background()))
+
+	listed, err = session.ListResources(context.Background(), nil)
+	require.NoError(t, err)
+	assert.Empty(t, listed.Resources)
+}
+
 // connect wires an in-memory client to the server and returns the client
 // session, cleaning both up when the test finishes.
 func connect(t *testing.T, server *Server) *sdk.ClientSession {
@@ -189,4 +241,41 @@ func newFakeProvider() *crossplane.Provider {
 	core := k8sfake.NewSimpleClientset()
 	client := crossplane.NewForClients(nil, core.Discovery(), core, "default")
 	return crossplane.NewStaticProvider("test-cluster", client)
+}
+
+func newXRDProvider(t *testing.T) (*crossplane.Provider, dynamic.Interface) {
+	t.Helper()
+	gvr := schema.GroupVersionResource{Group: crossplane.GroupAPIExtensions, Version: "v1", Resource: "compositeresourcedefinitions"}
+	obj := &unstructured.Unstructured{Object: map[string]any{
+		"apiVersion": crossplane.GroupAPIExtensions + "/v1",
+		"kind":       "CompositeResourceDefinition",
+		"metadata": map[string]any{
+			"name": "xdatabases.example.org",
+		},
+		"spec": map[string]any{
+			"group": "example.org",
+			"names": map[string]any{"kind": "XDatabase", "plural": "xdatabases"},
+			"scope": "Namespaced",
+			"versions": []any{
+				map[string]any{"name": "v1alpha1", "served": true, "referenceable": false},
+				map[string]any{"name": "v1beta1", "served": true, "referenceable": true},
+			},
+		},
+	}}
+	dynamicClient := dynamicfake.NewSimpleDynamicClientWithCustomListKinds(
+		runtime.NewScheme(), map[schema.GroupVersionResource]string{gvr: "CompositeResourceDefinitionList"}, obj,
+	)
+	discovery := &preferredDiscovery{FakeDiscovery: &fake.FakeDiscovery{Fake: &ktesting.Fake{}}}
+	discovery.Resources = []*metav1.APIResourceList{{
+		GroupVersion: crossplane.GroupAPIExtensions + "/v1",
+		APIResources: []metav1.APIResource{{
+			Name:       "compositeresourcedefinitions",
+			Kind:       "CompositeResourceDefinition",
+			Categories: []string{crossplane.CategoryCrossplane},
+			Verbs:      metav1.Verbs{"get", "list"},
+		}},
+	}}
+	core := k8sfake.NewSimpleClientset()
+	client := crossplane.NewForClients(dynamicClient, discovery, core, "default")
+	return crossplane.NewStaticProvider("test-cluster", client), dynamicClient
 }

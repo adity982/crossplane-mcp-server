@@ -47,17 +47,72 @@ func (c *Client) XRDSchemaFor(ctx context.Context, name, version string) (*XRDSc
 		return nil, err
 	}
 
+	selected, err := selectVersion(obj, version)
+	if err != nil {
+		return nil, err
+	}
+	return xrdSchema(obj, selected), nil
+}
+
+// XRDSchemas returns every version declared by every XRD in the cluster.
+//
+// Unlike API discovery, this reads the XRD objects directly, so callers can
+// reconcile a live catalog when definitions are installed or removed.
+func (c *Client) XRDSchemas(ctx context.Context) ([]*XRDSchema, error) {
+	resource, err := c.ResolveKind(ctx, "CompositeResourceDefinition", GroupAPIExtensions)
+	if err != nil {
+		return nil, err
+	}
+	objects, err := c.List(ctx, resource, ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	schemas := make([]*XRDSchema, 0, len(objects.Items))
+	for i := range objects.Items {
+		obj := &objects.Items[i]
+		for _, item := range nestedSlice(obj, "spec", "versions") {
+			version, ok := item.(map[string]any)
+			if !ok || stringField(version, "name") == "" {
+				continue
+			}
+			schemas = append(schemas, xrdSchema(obj, version))
+		}
+	}
+	sort.Slice(schemas, func(i, j int) bool {
+		if schemas[i].Group != schemas[j].Group {
+			return schemas[i].Group < schemas[j].Group
+		}
+		if schemas[i].CompositeKind != schemas[j].CompositeKind {
+			return schemas[i].CompositeKind < schemas[j].CompositeKind
+		}
+		return schemas[i].Version < schemas[j].Version
+	})
+	return schemas, nil
+}
+
+// XRDSchemaForType returns an XRD schema identified by its user-facing API
+// group, composite kind and version.
+func (c *Client) XRDSchemaForType(ctx context.Context, group, kind, version string) (*XRDSchema, error) {
+	schemas, err := c.XRDSchemas(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, schema := range schemas {
+		if schema.Group == group && schema.CompositeKind == kind && schema.Version == version {
+			return schema, nil
+		}
+	}
+	return nil, &ErrNotFound{What: fmt.Sprintf("XRD schema %s/%s/%s", group, kind, version)}
+}
+
+func xrdSchema(obj *unstructured.Unstructured, selected map[string]any) *XRDSchema {
 	schema := &XRDSchema{
 		Name:          obj.GetName(),
 		Group:         nestedString(obj, "spec", "group"),
 		CompositeKind: nestedString(obj, "spec", "names", "kind"),
 		ClaimKind:     nestedString(obj, "spec", "claimNames", "kind"),
 		Scope:         nestedString(obj, "spec", "scope"),
-	}
-
-	selected, err := selectVersion(obj, version)
-	if err != nil {
-		return nil, err
 	}
 
 	schema.Version = stringField(selected, "name")
@@ -78,7 +133,7 @@ func (c *Client) XRDSchemaFor(ctx context.Context, name, version string) (*XRDSc
 		}
 	}
 	schema.Example = exampleManifest(schema)
-	return schema, nil
+	return schema
 }
 
 // selectVersion picks the requested version, or the first served one.

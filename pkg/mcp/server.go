@@ -13,6 +13,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/google/jsonschema-go/jsonschema"
@@ -44,9 +45,11 @@ type Config struct {
 
 // Server owns the MCP server and the tools registered on it.
 type Server struct {
-	sdk    *sdk.Server
-	config Config
-	tools  []api.Tool
+	sdk          *sdk.Server
+	config       Config
+	tools        []api.Tool
+	resourcesMu  sync.Mutex
+	xrdResources map[string]struct{}
 }
 
 // NewServer builds an MCP server exposing the configured toolsets.
@@ -68,8 +71,9 @@ func NewServer(config Config) (*Server, error) {
 	}
 
 	s := &Server{
-		sdk:    sdk.NewServer(impl, &sdk.ServerOptions{Instructions: instructions(config.AllowWrite)}),
-		config: config,
+		sdk:          sdk.NewServer(impl, &sdk.ServerOptions{Instructions: instructions(config.AllowWrite)}),
+		config:       config,
+		xrdResources: map[string]struct{}{},
 	}
 
 	seen := map[string]string{}
@@ -95,6 +99,7 @@ func NewServer(config Config) (*Server, error) {
 		"tools", len(s.tools), "toolsets", len(config.Toolsets),
 		"writes", config.AllowWrite, "withheld", withheld)
 	s.registerPrompts()
+	s.registerXRDResourceTemplate()
 	return s, nil
 }
 
@@ -228,6 +233,10 @@ func (s *Server) invoke(ctx context.Context, tool api.Tool, arguments map[string
 // desktop MCP clients launch it.
 func (s *Server) ServeStdio(ctx context.Context) error {
 	s.config.Logger.Info("serving MCP over stdio")
+	if err := s.refreshXRDResources(ctx); err != nil {
+		s.config.Logger.Warn("cannot refresh XRD resources", "error", err)
+	}
+	go s.reconcileXRDResources(ctx)
 	err := s.sdk.Run(ctx, &sdk.StdioTransport{})
 	// A client closing its end of the pipe, or the context being cancelled by
 	// a signal, is how a stdio session ends. Neither is a failure.
@@ -241,7 +250,13 @@ func (s *Server) ServeStdio(ctx context.Context) error {
 // HTTPHandler returns a handler serving the streamable HTTP transport, for
 // deployments where the server runs in the cluster it inspects.
 func (s *Server) HTTPHandler() http.Handler {
-	return sdk.NewStreamableHTTPHandler(func(*http.Request) *sdk.Server { return s.sdk }, nil)
+	handler := sdk.NewStreamableHTTPHandler(func(*http.Request) *sdk.Server { return s.sdk }, nil)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := s.refreshXRDResources(r.Context()); err != nil {
+			s.config.Logger.Warn("cannot refresh XRD resources", "error", err)
+		}
+		handler.ServeHTTP(w, r)
+	})
 }
 
 func errorResult(err error) *sdk.CallToolResult {

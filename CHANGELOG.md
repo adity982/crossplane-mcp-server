@@ -10,6 +10,12 @@ a tool, or making an optional argument required, is a breaking change.
 
 ## [Unreleased]
 
+### Added
+
+- XRD versions are exposed as live MCP resources at stable
+  `crossplane://xrd/{group}/{kind}/{version}` URIs, with list-change
+  notifications when definitions appear or disappear.
+
 ## [0.2.0] - 2026-09-16
 
 ### Added
