@@ -22,7 +22,7 @@ jobs:
     steps:
       # Deliberately no checkout: pull_request_target runs with a write token
       # against the base repository, so fork code must never be executed here.
-      - uses: actions/github-script@v8
+      - uses: actions/github-script@v9
         with:
           script: |
             const pr = context.payload.pull_request;
