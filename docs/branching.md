@@ -223,7 +223,9 @@ button forever. Requiring CI would therefore make every docs pull request
 unmergeable.
 
 The DCO and branch guard workflows have no path filter, so they always report
-and are safe to require.
+and are safe to require. The DCO job explicitly succeeds for pull requests
+opened by `dependabot[bot]`; human-authored pull requests still need signed-off
+commits.
 
 CI still runs and is still visible on every pull request that touches code, and
 a red build is a blocker in review even though the button does not enforce it.

@@ -12,11 +12,17 @@ jobs:
     name: Check sign-off
     runs-on: ubuntu-latest
     steps:
+      - name: Accept Dependabot PRs
+        if: github.event.pull_request.user.login == 'dependabot[bot]'
+        run: echo "Dependabot-authored dependency updates are exempt from DCO sign-off checks."
+
       - uses: actions/checkout@v7
+        if: github.event.pull_request.user.login != 'dependabot[bot]'
         with:
           fetch-depth: 0
 
       - name: Verify every commit is signed off
+        if: github.event.pull_request.user.login != 'dependabot[bot]'
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
